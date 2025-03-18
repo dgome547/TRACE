@@ -1,0 +1,23 @@
+# SvelteKit (Node.js)
+node_modules/
+.svelte-kit/
+build/
+dist/
+.vite/
+*.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+
+# Environment files
+.env
+.env.local
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
