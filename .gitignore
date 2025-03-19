@@ -1,23 +1,23 @@
-# SvelteKit (Node.js)
-node_modules/
-.svelte-kit/
-build/
-dist/
-.vite/
-*.lock
+node_modules
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-venv/
-.venv/
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
 
-# Environment files
-.env
-.env.local
-
-# OS-specific junk
+# OS
 .DS_Store
 Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
