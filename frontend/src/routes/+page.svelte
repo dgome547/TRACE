@@ -7,18 +7,21 @@
     { label: 'Guest', value: 'guest' }
   ];
 
-  function selectUserType(type) {
+  async function selectUserType(type) {
+  try {
     if (type === 'admin') {
-      goto('/admin'); // Navigate to the admin page
-    }
-    else if (type === 'user') {
-      goto('/user'); // Navigate to the user page
-    }
-    else if (type === 'guest') {
-      goto('/guest'); // Navigate to the guest page
+      await goto('/admin');
+    } else if (type === 'user') {
+      await goto('/user');
+    } else if (type === 'guest') {
+      await goto('/guest');
     }
     console.log(`Selected user type: ${type}`);
+  } catch (error) {
+    console.error('Navigation failed:', error);
   }
+}
+
 </script>
 
   
