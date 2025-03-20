@@ -11,7 +11,7 @@ export const server_loads = [];
 
 export const dictionary = {
 		"/": [2],
-		"/homeScreen": [3]
+		"/webCrawler": [3]
 	};
 
 export const hooks = {
