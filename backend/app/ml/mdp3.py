@@ -8,6 +8,7 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
+from AI_Wordlist import AIWordlist
 
 #Natural Language Processing routine that cleans CSV text 
 def nlp_subroutine(csv_path: str):
@@ -249,7 +250,7 @@ class CredentialGeneratorMDP:
                     self.password_mdp.initial_states.append(state)
 
     # Generate a username and password pair
-    def generate_credential(self) -> Tuple[str, str]:
+    def generate_credential(self) -> Dict[str, str]:
         # Generate username
         if not self.username_mdp.initial_states:
             state = f"username_{random.choice(self.wordlists)[:2]}"
@@ -297,12 +298,12 @@ class CredentialGeneratorMDP:
         return enhanced
 
     # Generate multiple credentials
-    def generate_credentials(self, count: int = 10) -> List[Tuple[str, str]]:
+    def generate_credentials(self, count: int = 10) -> Dict[str, str]:
         self.build_state_transitions()
-        credentials = []
+        credentials = {}
         for _ in range(count):
             username, password = self.generate_credential()
-            credentials.append((username, password))
+            credentials[username] = password
         return credentials
 
 # Main function to run the credential generation process
@@ -311,6 +312,7 @@ def main():
     site_list_csv_path = "site_list.csv"
     csv_path = "web_text.csv"
     wordlist_path = "wordlist.txt"
+    credentials_csv_path = "storage/generated_credentials.csv"
 
     # Load URLs from the CSV file
     urls = load_urls_from_csv(site_list_csv_path)
@@ -324,11 +326,19 @@ def main():
     try:
         generator = CredentialGeneratorMDP(csv_path, wordlist_path)
         credentials = generator.generate_credentials(15)
-        print("\nGenerated Credentials:")
-        for username, password in credentials:
-            print(f"Username: {username}, Password: {password}")
+
+        wordlist_manager = AIWordlist(credentials_csv_path)
+        wordlist_manager.save_credentials_to_csv(credentials)
+        wordlist_manager.display_credentials(credentials)
+
+        #print("\nGenerated Credentials:")
+        #for username, password in credentials:
+        #    print(f"Username: {username}, Password: {password}")
     except Exception as e:
         print(f"Error generating credentials: {e}")
 
 if __name__ == "__main__":
     main()
+
+
+
