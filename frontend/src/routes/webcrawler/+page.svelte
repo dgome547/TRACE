@@ -1,5 +1,7 @@
 <!-- src/routes/crawler/+page.svelte -->
 <script>
+	import { goto } from "$app/navigation";
+
   let url = '';
   let depthLimit = 1;
   let timeout = 5000;
@@ -62,7 +64,7 @@
       type="number"
       bind:value={timeout}
     />
-    <button on:click={startCrawling} disabled={loading}>
+    <button on:click={goto('/MLalgorithm')} disabled={loading}>
       {loading ? 'Crawling...' : 'Start Crawler'}
     </button>
     

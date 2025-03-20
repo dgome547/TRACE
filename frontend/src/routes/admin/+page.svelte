@@ -2,7 +2,7 @@
 <script>
   import { goto } from '$app/navigation';
 
-  let attackTypes = ['webcrawler', 'Bruteforcer', 'ML Algorithm'];
+  let attackTypes = ['webcrawler', 'Bruteforcer'];
   let selectedAttack = '';
 
   function navigateToPage() {

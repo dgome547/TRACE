@@ -8,19 +8,34 @@
       "_internal.js"
     ]
   },
+  "_attributes.js": {
+    "file": "chunks/attributes.js",
+    "name": "attributes",
+    "imports": [
+      "_escaping.js"
+    ]
+  },
   "_client.js": {
     "file": "chunks/client.js",
     "name": "client",
     "imports": [
       "_exports.js",
-      "_index.js"
+      "_equality.js"
     ]
+  },
+  "_equality.js": {
+    "file": "chunks/equality.js",
+    "name": "equality"
+  },
+  "_escaping.js": {
+    "file": "chunks/escaping.js",
+    "name": "escaping"
   },
   "_exports.js": {
     "file": "chunks/exports.js",
     "name": "exports",
     "imports": [
-      "_index.js"
+      "_equality.js"
     ]
   },
   "_index.js": {
@@ -31,6 +46,7 @@
     "file": "chunks/internal.js",
     "name": "internal",
     "imports": [
+      "_equality.js",
       "_index.js"
     ]
   },
@@ -40,8 +56,9 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
     "isEntry": true,
     "imports": [
-      "_client.js",
-      "_index.js"
+      "_escaping.js",
+      "_index.js",
+      "_client.js"
     ]
   },
   "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
@@ -70,10 +87,24 @@
     "isEntry": true,
     "imports": [
       "_index.js",
-      "_client.js"
+      "_client.js",
+      "_escaping.js"
     ],
     "css": [
       "_app/immutable/assets/_page.CDT30j9q.css"
+    ]
+  },
+  "src/routes/MLalgorithm/+page.svelte": {
+    "file": "entries/pages/MLalgorithm/_page.svelte.js",
+    "name": "entries/pages/MLalgorithm/_page.svelte",
+    "src": "src/routes/MLalgorithm/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_escaping.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.r2IJFTYZ.css"
     ]
   },
   "src/routes/admin/+page.svelte": {
@@ -81,8 +112,29 @@
     "name": "entries/pages/admin/_page.svelte",
     "src": "src/routes/admin/+page.svelte",
     "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_client.js",
+      "_attributes.js",
+      "_escaping.js"
+    ],
     "css": [
-      "_app/immutable/assets/_page.r_MUY0qq.css"
+      "_app/immutable/assets/_page.T-E5ox_w.css"
+    ]
+  },
+  "src/routes/webcrawler/+page.svelte": {
+    "file": "entries/pages/webcrawler/_page.svelte.js",
+    "name": "entries/pages/webcrawler/_page.svelte",
+    "src": "src/routes/webcrawler/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_attributes.js",
+      "_escaping.js",
+      "_index.js",
+      "_client.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Bpy-koE5.css"
     ]
   }
 }

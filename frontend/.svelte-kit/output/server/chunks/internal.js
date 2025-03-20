@@ -1,4 +1,5 @@
-import { s as safe_equals, e as equals, H as HYDRATION_ERROR, g as get_descriptor, r as run_all, i as index_of, d as define_property, a as is_array, b as HYDRATION_START, c as HYDRATION_END, f as array_from, h as render, p as push$1, j as setContext, k as pop$1 } from "./index.js";
+import { s as safe_equals, e as equals, g as get_descriptor, r as run_all, i as index_of, d as define_property, a as is_array, b as array_from } from "./equality.js";
+import { H as HYDRATION_ERROR, a as HYDRATION_START, b as HYDRATION_END, r as render, p as push$1, s as setContext, c as pop$1 } from "./index.js";
 import "clsx";
 const BROWSER = false;
 let base = "";
@@ -1493,7 +1494,7 @@ const options = {
 		<div class="error">\r
 			<span class="status">` + status + '</span>\r\n			<div class="message">\r\n				<h1>' + message + "</h1>\r\n			</div>\r\n		</div>\r\n	</body>\r\n</html>\r\n"
   },
-  version_hash: "qt13w4"
+  version_hash: "jxcbun"
 };
 async function get_hooks() {
   let handle;
