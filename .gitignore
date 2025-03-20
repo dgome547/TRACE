@@ -1,10 +1,5 @@
 # SvelteKit (Node.js)
-node_modules/
-.svelte-kit/
-build/
-dist/
-.vite/
-*.lock
+
 
 # Python
 __pycache__/
