@@ -128,7 +128,7 @@ The TRACE backend is developed using Python 3.14, and the frontend is developed 
 2. Start backend via FastAPI
 ```bash
     cd /backend
-    app.main:app --reload --host 127.0.0.1 --port 5000
+    uvicorn app.main:app --reload --host 127.0.0.1 --port 5000
 ```
 3.  Start SvelteKit (Frontend)
 ``` bash 
