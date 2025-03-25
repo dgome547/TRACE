@@ -3,7 +3,8 @@
   import { goto } from '$app/navigation';
 
   onMount(() => {
-    goto('/crawler/launch');
+    // goto('/crawler/launch');
+    goto('/ml/launch');
   });
 </script>
 

@@ -273,7 +273,7 @@ License not specified
 [forks-shield]: https://img.shields.io/github/forks/dgome547/TRACE.svg?style=for-the-badge
 [forks-url]: https://github.com/dgome547/TRACE/forks
 
-[branches-shield]: https://img.shields.io/badge/Branches-4-green?style=for-the-badge
+[branches-shield]: https://img.shields.io/badge/Branches-5-green?style=for-the-badge
 [branches-url]: https://github.com/dgome547/TRACE/branches
 
 [issues-shield]: https://img.shields.io/github/issues/dgome547/TRACE.svg?style=for-the-badge

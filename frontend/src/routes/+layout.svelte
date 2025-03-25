@@ -1,4 +1,7 @@
 <script>
+   import '../app.css';
+
+   
     let icon1Default = "/T1.webp";
     let icon1Hover = "/T1-h.webp";
     let icon1Src = icon1Default;
