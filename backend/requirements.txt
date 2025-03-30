@@ -1,8 +1,0 @@
-neo4j
-fastapi 
-uvicorn
-asyncio
-bs4
-urljoin
-dotenv
-pydantic
