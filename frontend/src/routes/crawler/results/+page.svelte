@@ -69,14 +69,14 @@
     }
   
     th, td {
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
       padding: 8px;
       text-align: left;
     }
   
     th {
-      background-color: #9BC2CB;
-      color: black;
+      background-color: var(--primary);
+      color: var(--text); 
     }
   
     .button-container {
@@ -96,7 +96,7 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      background-color: #9BC2CB;
+      background-color: var(--primary);
     }
   </style>
   

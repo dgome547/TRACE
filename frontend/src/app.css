@@ -1,8 +1,10 @@
 :root {
-    --primary: #9BC2CB;;
+    --primary: #9BC2CB;
+    /* --primary: #4CAF50; */
     --secondary: #6c757d;
     --text: #000000;
     --bg: #ffffff;
+    --border: #ccc;
   }
   
   .dark {

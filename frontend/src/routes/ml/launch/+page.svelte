@@ -9,6 +9,7 @@
 
   let useWordlist = false;
   let wordlistPath = '';
+
   let usernameOptions = {
     characters: false,
     numbers: true,
@@ -22,13 +23,41 @@
     length: 12
   };
 
+  let generatedCredentials = [];
+
   function handleUpload() {
-    alert("Upload wordlist not implemented yet.");
+    const file = event.target.files[0];
+    if (file) {
+      wordlistPath = file.name; // or file.path (only works in Electron)
+      console.log("Selected file:", file);
+    }
   }
 
-  function handleGenerate() {
-    alert("🔐 Generate credentials not implemented yet.");
+  async function handleGenerate() {
+    try {
+      const res = await fetch('/api/ml/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wordlistPath,
+          usernameOptions,
+          passwordOptions
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to generate credentials");
+      }
+
+      const data = await res.json();
+      generatedCredentials = data.credentials;
+      alert("Credentials generated!");
+    } catch (err) {
+      console.error("Generation error:", err);
+      alert("Failed to generate credentials.");
+    }
   }
+
 </script>
 
 <style>
@@ -74,7 +103,7 @@
   }
 
   button {
-    background-color: #9BC2CB;
+    background-color: var(--primary);
     border: none;
     border-radius: 5px;
     padding: 12px 25px;
@@ -96,7 +125,7 @@
     <label>Word List *</label>
     <input type="text" bind:value={wordlistPath} placeholder="/home/user/wordlist.txt" />
     <br />
-    <button class="upload-btn" on:click={handleUpload}>📤 Upload Wordlist</button>
+    <button class="upload-btn" on:click={handleUpload}>Upload Wordlist</button>
   </div>
 
   <!-- Username & Password Settings -->

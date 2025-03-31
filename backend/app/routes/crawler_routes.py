@@ -55,12 +55,12 @@ async def get_crawl_results():
     results = []
     try:
         file_path = os.path.abspath("crawl_results.csv")
-        print("Looking for CSV at:", file_path)  # Debug print
+        # print("Looking for CSV at:", file_path)  # Debug print
         with open(file_path, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 results.append(row)
-        print("CSV Data fetched:", results)  # Debug print
+        # print("CSV Data fetched:", results)  # Debug print
         return JSONResponse(content=results)
     except Exception as e:
         print("Error reading CSV:", e)

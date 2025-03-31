@@ -4,6 +4,8 @@ from urllib.parse import urljoin
 import time
 import csv
 
+#TODO fix crawler depth issue (starts at 0 instead of 1)
+
 crawler_state = {
     "running": False,
     "paused": False,

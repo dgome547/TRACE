@@ -1,46 +1,10 @@
 <script>
-   import '../app.css';
-
-   
-    let icon1Default = "/T1.webp";
-    let icon1Hover = "/T1-h.webp";
-    let icon1Src = icon1Default;
-  
-    let icon2Default = "/T2.webp";
-    let icon2Hover = "/T2-h.webp";
-    let icon2Src = icon2Default;
-  
-    let icon3Default = "/T3.webp";
-    let icon3Hover = "/T3-h.webp";
-    let icon3Src = icon3Default;
-  
-    let icon4Default = "/T4.webp";
-    let icon4Hover = "/T4-h.webp";
-    let icon4Src = icon4Default;
-  
-    let settingDefault = "/settings-gear.webp";
-    let settingHover = "/settings-gear-h.webp";
-    let settingSrc = settingDefault;
+  import '../app.css';
   
     function onIconClick(icon) {
       console.log(`Clicked: ${icon}`);
     }
-  
-    function handleMouseOver(icon) {
-      if (icon === 1) icon1Src = icon1Hover;
-      if (icon === 2) icon2Src = icon2Hover;
-      if (icon === 3) icon3Src = icon3Hover;
-      if (icon === 4) icon4Src = icon4Hover;
-      if (icon === 'setting') settingSrc = settingHover;
-    }
-  
-    function handleMouseOut(icon) {
-      if (icon === 1) icon1Src = icon1Default;
-      if (icon === 2) icon2Src = icon2Default;
-      if (icon === 3) icon3Src = icon3Default;
-      if (icon === 4) icon4Src = icon4Default;
-      if (icon === 'setting') settingSrc = settingDefault;
-    }
+
   </script>
   
   <style>
@@ -67,10 +31,39 @@
     }
   
     .logo {
-      width: 120px;
-      height: 40px;
+      width: 2%;
+      height: 20px;
       margin-bottom: 30px;
     }
+
+    .icon-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items:  center;
+      padding: 0;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.2s ease-in-out;
+    }
+
+    .icon-button svg {
+      width: 30px;
+      height: 30px;
+      filter: brightness(0) saturate(100%);
+      color: #666;
+      transition: color 0.2s ease;
+    }
+
+    .icon-button:hover svg {
+      filter: brightness(0) saturate(100%) sepia(100%) hue-rotate(200deg) saturate(600%) brightness(1.2);
+    }
+
   
     .icons {
         display: flex;
@@ -82,19 +75,17 @@
         transform: translateY(-50%);
     }
   
-    .icons img, .settings {
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-    }
+
   
     .settings {
-        width: 50px;
-        height: 50px;
         cursor: pointer;
         position: absolute;
         bottom: 40px
       
+    }
+
+    .settings:hover svg {
+      color: #ff9800;
     }
   
     .main {
@@ -103,20 +94,33 @@
       overflow-y: auto;
     }
   </style>
+
+  
   
   <div class="layout">
     <aside class="sidebar">
-      <img src="/trace-logo.png" alt="Logo" class="logo" on:click={() => onIconClick('logo')} />
+      <img src="/trace-logo.png" alt="logo" on:click={() => onIconClick('logo')} />
+
       <div class="icons">
-        <img src={icon1Src} alt="Icon 1" on:click={() => onIconClick(1)} on:mouseover={() => handleMouseOver(1)} on:mouseout={() => handleMouseOut(1)} />
-        <img src={icon2Src} alt="Icon 2" on:click={() => onIconClick(2)} on:mouseover={() => handleMouseOver(2)} on:mouseout={() => handleMouseOut(2)} />
-        <img src={icon3Src} alt="Icon 3" on:click={() => onIconClick(3)} on:mouseover={() => handleMouseOver(3)} on:mouseout={() => handleMouseOut(3)} />
-        <img src={icon4Src} alt="Icon 4" on:click={() => onIconClick(4)} on:mouseover={() => handleMouseOver(4)} on:mouseout={() => handleMouseOut(4)} />
-      </div>
-      <img src={settingSrc} alt="Settings" class="settings" on:click={() => onIconClick('setting')} on:mouseover={() => handleMouseOver('setting')} on:mouseout={() => handleMouseOut('setting')} />
+        <button class="icon-button" aria-label="Icon 1">
+          <img src="/T1.svg" alt="Icon 1" />
+        </button>
+        <button class="icon-button" aria-label="Icon 2">
+          <img src="/T2.svg" alt="Icon 1" />
+        </button>
+        <button class="icon-button" aria-label="Icon 3">
+          <img src="/T3.svg" alt="Icon 1" />
+        </button>
+        <button class="icon-button" aria-label="Icon 4">
+          <img src="/T4.svg" alt="Icon 1" />
+        </button>
+        <button class="icon-button" aria-label="Settings">
+          <img src="/SettingsGear.svg" alt="Settings" />
+        </button>
     </aside>
   
     <div class="main">
+      <p style="color: gray;">Layout loaded</p>
       <slot />
     </div>
   </div>

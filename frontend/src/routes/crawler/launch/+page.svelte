@@ -69,7 +69,7 @@
     .crawler-form input {
       padding: 0.5rem;
       font-size: 1rem;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
       border-radius: 4px;
       width: 100%;
       box-sizing: border-box;
@@ -83,8 +83,8 @@
       height: 20px;
       width: 100px; /* Increase this value for a longer button */
       padding: 1rem; /* Adjust padding for height/vertical spacing */
-      background-color: #9BC2CB; /* Your desired background color */
-      color: #0C0D0C;
+      background-color: var(--primary); /* Your desired background color */
+      color: var(--text);
       border: none;
       border-radius: 4px;
       cursor: pointer;

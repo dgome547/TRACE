@@ -60,14 +60,14 @@
   }
 
   th, td {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
     padding: 8px;
     text-align: left;
   }
 
   th {
-    background-color: #9BC2CB;
-    color: black;
+    background-color: var(--primary);
+    color: var(--text);
   }
 
   /* Fixed bottom buttons */
@@ -91,11 +91,11 @@
   }
 
   .pause {
-    background-color: #9BC2CB;
+    background-color: var(--primary);
   }
 
   .stop {
-    background-color: #9BC2CB;
+    background-color: var(--primary);
   }
 </style>
 
