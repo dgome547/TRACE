@@ -1,3 +1,5 @@
+
+
 import random
 import re
 from collections import defaultdict
@@ -8,21 +10,11 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
+import aiohttp
+import asyncio
+from urllib.parse import urlparse
 from AI_Wordlist import AIWordlist
 
-
-
-
-#############################################################################################
-#                                       From Here                                           #
-############################################################################################# 
-# pip install beautifulsoup4        //This one is for the import that was already in but I did not have is installed
-# pip install aiohttp               //This one is needed for aiohttp library to work
-
-
-import aiohttp #Added Import
-import asyncio #Added Import
-from urllib.parse import urlparse #Added Import
 
 #Natural Language Processing routine that cleans CSV text 
 def normalize_text(text):
@@ -176,62 +168,63 @@ class WebScraper:
 
 
     # Load web text from a CSV file
-    def load_web_text(csv_path: str) -> str:
-        if not os.path.exists(csv_path):
-            raise FileNotFoundError(f"CSV file not found: {csv_path}")
-        try:
-            with open(csv_path, 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
-                    raise ValueError("CSV must contain columns: id, content, url")
-                contents = []
-                for row in reader:
-                    if row['content']:
-                        contents.append(row['content'].lower())
-            return " ".join(contents)
-        except csv.Error as e:
-            raise ValueError(f"Error reading CSV file: {e}")
+def load_web_text(csv_path: str) -> str:
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
+                raise ValueError("CSV must contain columns: id, content, url")
+            contents = []
+            for row in reader:
+                if row['content']:
+                    contents.append(row['content'].lower())
+        return " ".join(contents)
+    except csv.Error as e:
+        raise ValueError(f"Error reading CSV file: {e}")
 
-    # Load wordlist from a file
-    def load_wordlist(file_path: str) -> List[str]:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Wordlist file not found: {file_path}")
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                words = [line.strip().lower() for line in file if line.strip()]
-            return words
-        except Exception as e:
-            raise ValueError(f"Error reading wordlist file: {e}")
+# Load wordlist from a file
+def load_wordlist(file_path: str) -> List[str]:
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Wordlist file not found: {file_path}")
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            words = [line.strip().lower() for line in file if line.strip()]
+        return words
+    except Exception as e:
+        raise ValueError(f"Error reading wordlist file: {e}")
 
 
 
-        
-#############################################################################################
-#                                       To Here                                             #
-#############################################################################################       
-        
-        
-        
-        
-        
 
 # Class for managing the Markov Decision Process for generating credentials
 class CredentialMDP:
-    def __init__(self, order: int = 2, gamma: float = 0.9):
+    def __init__(self, order: int = 4, gamma: float = 0.8):
         self.order = order
         self.gamma = gamma
         self.q_values: Dict[str, Dict[Tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
         self.state_transitions: Dict[str, Dict[str, Set[str]]] = defaultdict(lambda: defaultdict(set))
         self.used_usernames: Set[str] = set()
-        self.epsilon = 0.1
-        self.learning_rate = 0.1
+        self.epsilon = 1.0
+        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.99
+        self.learning_rate = 0.3
         self.initial_states: List[str] = []
+
+    def decay_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+            self.epsilon = max(self.epsilon, self.epsilon_min)
 
     # Calculate the strength of a password
     def calculate_password_strength(self, password: str) -> float:
         score = 0.0
         if len(password) >= 12:
-            score += 0.3
+            score += 0.25
+        elif len(password) >= 8:
+            score += 0.15
+
         if re.search(r'[A-Z]', password):
             score += 0.2
         if re.search(r'[0-9]', password):
@@ -245,8 +238,11 @@ class CredentialMDP:
     # Calculate the quality of a username
     def calculate_username_quality(self, username: str) -> float:
         score = 0.0
-        if len(username) >= 6:
+        if len(username) >= 8:
             score += 0.3
+        elif len(username) >= 5:
+            score += 0.2
+
         if username not in self.used_usernames:
             score += 0.4
         if re.match(r'^[a-z]', username):
@@ -318,7 +314,7 @@ class CredentialGeneratorMDP:
             self.wordlists = wordlist_path
 
         self.username_mdp = CredentialMDP(order=2)
-        self.password_mdp = CredentialMDP(order=3)
+        self.password_mdp = CredentialMDP(order=4)
         self.min_username_length = 5
         self.min_password_length = 10
 
@@ -368,6 +364,7 @@ class CredentialGeneratorMDP:
             reward = self.username_mdp.get_reward(state, action, next_char)
             self.username_mdp.update_q_value(state, action, next_char, next_state, reward)
             state = next_state
+            self.username_mdp.decay_epsilon()
 
         username = f"{username}{random.randint(1, 999)}"
         self.username_mdp.used_usernames.add(username)
@@ -388,6 +385,7 @@ class CredentialGeneratorMDP:
             reward = self.password_mdp.get_reward(state, action, next_char)
             self.password_mdp.update_q_value(state, action, next_char, next_state, reward)
             state = next_state
+            self.password_mdp.decay_epsilon()
 
         password = self.enhance_password(password)
         return username, password
@@ -407,7 +405,7 @@ class CredentialGeneratorMDP:
             credentials[username] = password
         return credentials
 
-# Main function to run the credential generation process  
+# Main function to run the credential generation process
 def main():
     # File paths
     site_list_csv_path = "site_list.csv"
@@ -440,6 +438,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
 
 
 
