@@ -10,33 +10,96 @@ import requests
 from bs4 import BeautifulSoup
 from AI_Wordlist import AIWordlist
 
+
+
+
+#############################################################################################
+#                                       From Here                                           #
+############################################################################################# 
+# pip install beautifulsoup4        //This one is for the import that was already in but I did not have is installed
+# pip install aiohttp               //This one is needed for aiohttp library to work
+
+
+import aiohttp #Added Import
+import asyncio #Added Import
+from urllib.parse import urlparse #Added Import
+
 #Natural Language Processing routine that cleans CSV text 
+def normalize_text(text):
+    # Remove non-English characters and resolve encoding issues
+    text = re.sub(r'[^\x00-\x7F]+', '', text)  # Remove non-ASCII characters
+    text = text.encode('ascii', errors='ignore').decode('utf-8')  # Normalize encoding
+    return text
+
+def split_compound_words(text):
+    # Split compound words using regex
+    return re.sub(r'-', ',', text)
+
+def filter_words(words, stopwords, acronyms):
+    # Remove words less than 4 characters (except acronyms)
+    filtered_words = []
+    for word in words:
+        if len(word) >= 4 or word.upper() in acronyms:
+            filtered_words.append(word)
+    return filtered_words
+
+def remove_specific_determiners(words):
+    # Define lists of determiners to remove
+    definite_articles = {"the"}
+    demonstrative_determiners = {"this", "that", "these", "those"}
+    distributive_determiners = {"each", "every", "either", "neither"}
+    interrogative_determiners = {"which", "what", "whose"}
+    possessive_determiners = {"my", "your", "his", "her", "its", "our", "their"}
+    
+    all_determiners = (definite_articles | demonstrative_determiners |
+                       distributive_determiners | interrogative_determiners)
+    
+    cleaned_words = [word for word in words if word.lower() not in all_determiners]
+    return cleaned_words
+
 def nlp_subroutine(csv_path: str):
-    stopwords = {"the", "and", "or"} #Words to clean from CSV file
+    stopwords = {"and", "or"}  # Additional stopwords
+    acronyms = {"AI", "NLP", "USA"}  # Example acronyms
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    
     cleaned_rows = []
     with open(csv_path, "r", encoding="utf-8") as infile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
         if not fieldnames or not {"id", "content", "url"}.issubset(fieldnames):
             raise ValueError("CSV must contain columns: id, content, url")
+        
         for row in reader:
             text = row["content"] if row["content"] else ""
-            words = re.findall(r"\w+", text, flags=re.IGNORECASE)
-            filtered_words = [
-                word for word in words
-                if word.lower() not in stopwords
-            ]
-            cleaned_text = " ".join(filtered_words)
+            
+            # Apply normalization
+            text = normalize_text(text)
+            
+            # Split compound words
+            text = split_compound_words(text)
+            
+            # Tokenize text
+            words = re.findall(r'\w+', text, flags=re.IGNORECASE)
+            
+            # Remove specified determiners
+            words = remove_specific_determiners(words)
+            
+            # Filter words based on length and acronyms
+            words = filter_words(words, stopwords, acronyms)
+            
+            cleaned_text = " ".join(words)
             row["content"] = cleaned_text
             cleaned_rows.append(row)
-    #Overwrite original CSV with cleaned text
+    
+    # Overwrite original CSV with cleaned text
     with open(csv_path, "w", newline="", encoding="utf-8") as outfile:
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(cleaned_rows)
-    print(f"Cleaned CSV '{csv_path}' file has been generated.")
+    
+    print(f"Cleaned CSV '{csv_path}' file has been updated successfully.")
+
 
 #Load URLs from a CSV file with columns 'id' and 'website'.
 def load_urls_from_csv(csv_path: str) -> List[str]:
@@ -57,62 +120,100 @@ def load_urls_from_csv(csv_path: str) -> List[str]:
 
 #Web scraper functions and will pull something out of the URLs provided.
 class WebScraper:
-    # Initialize with list of URLs
     def __init__(self, urls):
         self.urls = urls
+        self.hierarchy = self.organize_urls(urls)
 
-    # Scrape text content from web pages
-    def scrape_pages(self):
-        results = []
-        for i, url in enumerate(self.urls, 1):
-            try:
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, 'html.parser')
-                # Extract text from p, h1, h2, h3, and span tags
+    def organize_urls(self, urls):
+        # Group URLs by domain into a hierarchy
+        hierarchy = defaultdict(list)
+        for url in urls:
+            domain = urlparse(url).netloc
+            hierarchy[domain].append(url)
+        return hierarchy
+
+    async def fetch_page(self, session, url):
+        try:
+            async with session.get(url, timeout=10) as response:
+                html = await response.text()
+                soup = BeautifulSoup(html, 'html.parser')
+
+                # Extract text from p, h1, h2, h3, span tags
                 text = ' '.join([tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'span'])])
-                results.append((i, text, url))
-                time.sleep(1)  # Be polite to servers
-            except Exception as e:
-                print(f"Error scraping {url}: {e}")
+
+                # Extract words from logos, labels, and class titles
+                logo_text = ' '.join([tag['alt'] for tag in soup.find_all('img', alt=True)])
+                label_text = ' '.join([tag.get_text() for tag in soup.find_all('label')])
+                class_text = ' '.join([tag['class'][0] for tag in soup.find_all(class_=True) if tag.get('class')])
+
+                # Combine extracted text
+                combined_text = f"{text} {logo_text} {label_text} {class_text}"
+                return url, combined_text
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
+            return url, ""
+
+    async def scrape_pages(self):
+        results = []
+        async with aiohttp.ClientSession() as session:
+            tasks = [self.fetch_page(session, url) for url in self.urls]
+            responses = await asyncio.gather(*tasks)
+            for i, (url, content) in enumerate(responses, 1):
+                results.append((i, content, url))
         return results
 
-    # Generate CSV file with scraped data
     def generate_csv(self, filename):
-        data = self.scrape_pages()
+        # Run the asynchronous scraping process
+        data = asyncio.run(self.scrape_pages())
+        
+        # Write results to CSV
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(['id', 'content', 'url'])  # Header
+            csv_writer.writerow(['id', 'content', 'url'])  # CSV header
             csv_writer.writerows(data)
-        print(f"CSV file '{filename}' has been generated.")
-        
-# Load web text from a CSV file
-def load_web_text(csv_path: str) -> str:
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
-    try:
-        with open(csv_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
-                raise ValueError("CSV must contain columns: id, content, url")
-            contents = []
-            for row in reader:
-                if row['content']:
-                    contents.append(row['content'].lower())
-        return " ".join(contents)
-    except csv.Error as e:
-        raise ValueError(f"Error reading CSV file: {e}")
 
-# Load wordlist from a file
-def load_wordlist(file_path: str) -> List[str]:
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Wordlist file not found: {file_path}")
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            words = [line.strip().lower() for line in file if line.strip()]
-        return words
-    except Exception as e:
-        raise ValueError(f"Error reading wordlist file: {e}")
+        print(f"CSV file '{filename}' has been generated successfully.")
+
+
+    # Load web text from a CSV file
+    def load_web_text(csv_path: str) -> str:
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"CSV file not found: {csv_path}")
+        try:
+            with open(csv_path, 'r', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
+                    raise ValueError("CSV must contain columns: id, content, url")
+                contents = []
+                for row in reader:
+                    if row['content']:
+                        contents.append(row['content'].lower())
+            return " ".join(contents)
+        except csv.Error as e:
+            raise ValueError(f"Error reading CSV file: {e}")
+
+    # Load wordlist from a file
+    def load_wordlist(file_path: str) -> List[str]:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Wordlist file not found: {file_path}")
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                words = [line.strip().lower() for line in file if line.strip()]
+            return words
+        except Exception as e:
+            raise ValueError(f"Error reading wordlist file: {e}")
+
+
+
+        
+#############################################################################################
+#                                       To Here                                             #
+#############################################################################################       
+        
+        
+        
+        
+        
 
 # Class for managing the Markov Decision Process for generating credentials
 class CredentialMDP:
@@ -306,7 +407,7 @@ class CredentialGeneratorMDP:
             credentials[username] = password
         return credentials
 
-# Main function to run the credential generation process
+# Main function to run the credential generation process  
 def main():
     # File paths
     site_list_csv_path = "site_list.csv"
