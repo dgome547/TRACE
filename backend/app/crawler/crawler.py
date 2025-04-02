@@ -5,14 +5,45 @@ import time
 import csv
 import re
 import requests
+import logging
 from typing import Optional, Dict, Any
+from datetime import datetime
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('crawler.log'),
+        logging.StreamHandler()
+    ]
+)
 
 class HttpHandler:
-    def fetch(self, url: str, timeout: float) -> Optional[requests.Response]:
+    def __init__(self, rate_limit: float = 1.0):
+        self.rate_limit = rate_limit
+        self.last_request_time = 0
+
+    async def fetch(self, url: str, timeout: float) -> Optional[requests.Response]:
         try:
-            return requests.get(url, timeout=timeout)
+            # Implement rate limiting
+            current_time = time.time()
+            time_since_last = current_time - self.last_request_time
+            if time_since_last < self.rate_limit:
+                await asyncio.sleep(self.rate_limit - time_since_last)
+            
+            self.last_request_time = time.time()
+            response = requests.get(url, timeout=timeout, headers={
+                'User-Agent': 'TRACE-Crawler/1.0',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            })
+            response.raise_for_status()
+            return response
         except requests.RequestException as e:
-            print(f"Error fetching {url}: {str(e)}")
+            logging.error(f"Error fetching {url}: {str(e)}")
+            return None
+        except Exception as e:
+            logging.error(f"Unexpected error while fetching {url}: {str(e)}")
             return None
 
 class Crawler:
@@ -25,12 +56,26 @@ class Crawler:
             "paused": False,
             "stopped": False
         }
+        self.stats = {
+            "start_time": None,
+            "end_time": None,
+            "total_urls": 0,
+            "successful_fetches": 0,
+            "failed_fetches": 0
+        }
 
     def reset_state(self):
         self.state = {
             "running": False,
             "paused": False,
             "stopped": False
+        }
+        self.stats = {
+            "start_time": None,
+            "end_time": None,
+            "total_urls": 0,
+            "successful_fetches": 0,
+            "failed_fetches": 0
         }
 
     def valid_url(self, url: str) -> bool:
@@ -86,10 +131,26 @@ class Crawler:
             return False
 
     async def start_crawling(self, start_url: str, config: dict, http_handler, websocket=None):
+        self.stats["start_time"] = datetime.now()
         self.visited.clear()
         self.results = []
-        await self._crawl(start_url, config, 0, http_handler, websocket)
-        self.export_to_csv()
+        try:
+            await self._crawl(start_url, config, 0, http_handler, websocket)
+            self.export_to_csv()
+            self.stats["end_time"] = datetime.now()
+            self.log_stats()
+        except Exception as e:
+            logging.error(f"Error during crawling: {str(e)}")
+            raise
+
+    def log_stats(self):
+        duration = (self.stats["end_time"] - self.stats["start_time"]).total_seconds()
+        logging.info(f"Crawling Statistics:")
+        logging.info(f"Total URLs crawled: {self.stats['total_urls']}")
+        logging.info(f"Successful fetches: {self.stats['successful_fetches']}")
+        logging.info(f"Failed fetches: {self.stats['failed_fetches']}")
+        logging.info(f"Total duration: {duration:.2f} seconds")
+        logging.info(f"Average time per URL: {duration/self.stats['total_urls']:.2f} seconds")
 
     async def _crawl(self, url: str, config: dict, depth: int, http_handler, websocket=None):
         if self.state["stopped"] or depth >= config["depth_limit"] or url in self.visited:
@@ -100,32 +161,41 @@ class Crawler:
 
         self.visited.add(url)
         self.results.append((url, depth))
-        print(f"Crawling: {url}")
+        self.stats["total_urls"] += 1
+        logging.info(f"Crawling: {url} (Depth: {depth})")
 
-        # Send actual crawled URL to frontend
         if websocket:
-            await websocket.send_json({"url": url})
+            try:
+                await websocket.send_json({"url": url})
+            except Exception as e:
+                logging.error(f"Error sending to websocket: {str(e)}")
 
-        response = http_handler.fetch(url, config["timeout"])
+        response = await http_handler.fetch(url, config["timeout"])
         if response is None:
-            print(f"Failed to fetch {url}")
+            self.stats["failed_fetches"] += 1
+            logging.warning(f"Failed to fetch {url}")
             return
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        for link in soup.find_all("a", href=True):
-            next_url = urljoin(url, link["href"])
-            if self.valid_url(next_url):
-                await self._crawl(next_url, config, depth + 1, http_handler, websocket)
+        self.stats["successful_fetches"] += 1
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+            for link in soup.find_all("a", href=True):
+                next_url = urljoin(url, link["href"])
+                if self.valid_url(next_url):
+                    await self._crawl(next_url, config, depth + 1, http_handler, websocket)
+        except Exception as e:
+            logging.error(f"Error parsing {url}: {str(e)}")
 
     def export_to_csv(self):
         try:
-            with open(self.output_file, mode="w", newline="") as file:
+            with open(self.output_file, mode="w", newline="", encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow(["URL", "Depth"])
-                writer.writerows(self.results)
-            print(f"Results exported to {self.output_file}")
+                writer.writerow(["URL", "Depth", "Timestamp"])
+                writer.writerows([(url, depth, datetime.now().isoformat()) for url, depth in self.results])
+            logging.info(f"Results exported to {self.output_file}")
         except IOError as e:
-            print(f"Error exporting results to CSV: {str(e)}")
+            logging.error(f"Error exporting results to CSV: {str(e)}")
+            raise
 
 async def run_crawler(config: Dict[str, Any], websocket=None):
     print("Crawler started with config:")
