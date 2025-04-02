@@ -15,6 +15,20 @@ import asyncio
 from urllib.parse import urlparse
 from AI_Wordlist import AIWordlist
 
+# Artificial Intelligence (AI) Subroutine:
+# 2.	The development team shall evaluate and modify, as necessary the following aspects of the AI subroutine:
+# 2.1.	Review and modify the order parameters current values to further optimize the generation of viable passwords
+# 2.2.	assess whether the state transitions capture sufficient context for meaningful credential generation
+# 2.3.	Evaluate and modify the calculate_password_strength method's weights.
+# 2.4.	Evaluate and modify the calculate_username_quality method's weights.
+# 2.5.	Review and modify the following learning parameters:
+# 2.5.1.	Epsilon value (Currently .1, deals with exploration-exploitation balance)
+# 2.5.2.	Learning rate (Currently .1, deals with Q-value updates)
+# 2.5.3.	Gamma Factor (Currently .9, deals with future reward considerations)
+# 2.6.	Improve the algorithm to dynamically heighten rewards given to states or actions that place approved special characters in positions deemed as important.
+# 2.7.	The MDP algorithm shall incorporate a distinct symbol state in order to determine which special characters will be selected for the username/password generation.
+
+
 
 #Natural Language Processing routine that cleans CSV text 
 def normalize_text(text):
@@ -199,6 +213,8 @@ def load_wordlist(file_path: str) -> List[str]:
 
 
 # Class for managing the Markov Decision Process for generating credentials
+# 2.5.3. Gamma Factor (Currently .9, deals with future reward considerations)
+# - Keeps focus on near-future character contributions, especially important since passwords/usernames are relatively short sequences.
 class CredentialMDP:
     def __init__(self, order: int = 4, gamma: float = 0.8):
         self.order = order
@@ -206,9 +222,18 @@ class CredentialMDP:
         self.q_values: Dict[str, Dict[Tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
         self.state_transitions: Dict[str, Dict[str, Set[str]]] = defaultdict(lambda: defaultdict(set))
         self.used_usernames: Set[str] = set()
+
+        # 2.5.	Review and modify the following learning parameters:
+        # 2.5.1. Epsilon value (Currently .1, deals with exploration-exploitation balance)
+        # Epsilon Decay (Exploration Decay):
+        # - Early in learning: you want more exploration.
+        # - Later on: you want to exploit the best-known paths.
         self.epsilon = 1.0
         self.epsilon_min = 0.1
         self.epsilon_decay = 0.99
+
+        # 2.5.2.	Learning rate (Currently .1, deals with Q-value updates)
+        # - Makes Q-values more responsive to useful paths and good transitions.
         self.learning_rate = 0.3
         self.initial_states: List[str] = []
 
@@ -218,6 +243,9 @@ class CredentialMDP:
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
     # Calculate the strength of a password
+    # 2.3. Evaluate and modify the calculate_password_strength method's weights.
+    # - Added partial credit for passwords between 8–11 characters.
+    # - Increased the weight for unique characters to reward entropy more.
     def calculate_password_strength(self, password: str) -> float:
         score = 0.0
         if len(password) >= 12:
@@ -236,6 +264,9 @@ class CredentialMDP:
         return score
 
     # Calculate the quality of a username
+    # 2.4. Evaluate and modify the calculate_username_quality method's weights.
+    # - Introduced partial score for usernames ≥ 5 (in case some are short)
+    # - Promotes slightly longer, more meaningful usernames while still allowing short ones.
     def calculate_username_quality(self, username: str) -> float:
         score = 0.0
         if len(username) >= 8:
@@ -313,8 +344,14 @@ class CredentialGeneratorMDP:
             self.web_text = csv_path
             self.wordlists = wordlist_path
 
-        self.username_mdp = CredentialMDP(order=2)
-        self.password_mdp = CredentialMDP(order=4)
+        # 2.1 Review and modify the order parameters current values to further optimize the generation of viable passwords
+        # If order = 2, the state is built from the last 2 characters of the string.
+        # Before username(order=2): Less context taken and more randomness
+        # After username(order=3): More readable and structured usernames, while still allowing some variety
+        # Before password(order=3): Not enough to structure strong enough passwords
+        # After password(order=5): Preservers meaningful substrings and generate more secure passwords
+        self.username_mdp = CredentialMDP(order=3)
+        self.password_mdp = CredentialMDP(order=5)
         self.min_username_length = 5
         self.min_password_length = 10
 
@@ -324,6 +361,11 @@ class CredentialGeneratorMDP:
         return [word for word in words if len(word) >= 4]
 
     # Build state transitions for username and password generation
+    # 2.2. assess whether the state transitions capture sufficient context for meaningful credential generation
+    # build_state_transitions function learns transitions from:
+    # - Cleaned web text (real-world content from scraped sites)
+    # - A curated wordlist (known terms like "secure", "login", etc.)
+    # That’s a solid training base — it ensures transitions aren’t random noise but learned from domain-relevant sources.
     def build_state_transitions(self):
         username_data = set(self.preprocess_text(self.web_text) + self.wordlists)
         password_data = set(word for word in username_data if len(word) >= 8)
@@ -438,6 +480,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
