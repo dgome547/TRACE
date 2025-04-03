@@ -1,0 +1,169 @@
+.parameter-fuzzing-container {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    display: flex;
+    height: 100vh;
+  }
+  
+  /* Main content styles */
+  .main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  header {
+    margin-bottom: 20px;
+    position: relative;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin: 0;
+    font-weight: 600;
+  }
+  
+  .subtext {
+    color: #555;
+    margin-top: 4px;
+  }
+  
+  .steps-container {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 20px;
+    top: 0;
+  }
+  
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 14px;
+    color: #888;
+  }
+  
+  .step.active {
+    color: #3498db;
+  }
+  
+  .step.completed {
+    color: #2ecc71;
+  }
+  
+  .step-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  
+  .connector {
+    width: 60px;
+    height: 2px;
+    background-color: #ccc;
+    margin: 0 8px;
+  }
+  
+  .connector.completed {
+    background-color: #2ecc71;
+  }
+  
+  .metrics-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .metric {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .metric h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .metric .value {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .table-container {
+    margin-bottom: 20px;
+    overflow-x: auto;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  
+  th {
+    background-color: #d1e0e6;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: help;
+  }
+  
+  td {
+    padding: 10px;
+    border-top: 1px solid #eee;
+  }
+  
+  tbody tr:nth-child(even):not([style*="background-color"]) {
+    background-color: #f9f9f9;
+  }
+  
+  .response-error {
+    font-size: 12px;
+    color: #e74c3c;
+    display: block;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .spacer {
+    flex: 1;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .btn {
+    background-color: #b9d8e3;
+    color: #2c3e50;
+  }
+  
+  .btn:hover {
+    opacity: 0.9;
+  }

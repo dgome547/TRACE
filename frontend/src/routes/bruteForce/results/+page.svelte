@@ -58,7 +58,7 @@
     // SRS 3.2.3.1-27a: Restart functionality
     function handleRestart() {
       // Clear results and navigate to configuration page
-      goto('/bruteForce/configuration');    
+      goto('/bruteForce');    
     }
     
     // SRS 3.2.3.1-27b: Export functionality
