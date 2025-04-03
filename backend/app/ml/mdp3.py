@@ -28,19 +28,38 @@ from AI_Wordlist import AIWordlist
 # 2.6.	Improve the algorithm to dynamically heighten rewards given to states or actions that place approved special characters in positions deemed as important.
 # 2.7.	The MDP algorithm shall incorporate a distinct symbol state in order to determine which special characters will be selected for the username/password generation.
 
+# Web Scraping Subroutine:
+# 3.	The Web Scraping subroutine shall be updated to perform the following
+# 3.1.	The system shall organize URLs into a hierarchy tree structure to facilitate structured exploration, enabling efficient parallel processing and CSV generation.
+# 3.2.	The scraper algorithm shall be modified to extract all words associated with logos, labels and class titles.
+# 3.3.	The scraper algorithm shall be modified to perform batch processing in order to increase the efficiency.
+# 3.4.	The web scraper shall leverage aiohttp in order to parallelize web scraping.
+
+# Natural Language Processing (NLP) Subroutine:
+# 4.	THE NLP subroutine shall be updated to perform the following:
+# 4.1.	The NLP algorithm shall normalize all text in its output by removing non-english characters and resolving encoding issues.
+# 4.2.	The NLP algorithm shall break up compound words (ex. sister-in-law -> sister,in,law)
+# 4.3.	The NLP algorithm shall remove all definite articles, Demonstrative Determiners, Distributive Determiners and Interrogative Determiners from the text leveraging a NLP algorithm.
+# 4.4.	The NLP algorithm shall remove all words less than 4 characters long unless the word is determined to be an acronym.
+# 4.5.	The NLP algorithm shall remove all instances of possessive determiners except for those determined to be as part of a technological name or user role/name
 
 
-#Natural Language Processing routine that cleans CSV text 
+
+
+#Natural Language Processing routine that cleans CSV text
+# 4.1.	The NLP algorithm shall normalize all text in its output by removing non-english characters and resolving encoding issues. 
 def normalize_text(text):
     # Remove non-English characters and resolve encoding issues
     text = re.sub(r'[^\x00-\x7F]+', '', text)  # Remove non-ASCII characters
     text = text.encode('ascii', errors='ignore').decode('utf-8')  # Normalize encoding
     return text
 
+# 4.2.	The NLP algorithm shall break up compound words (ex. sister-in-law -> sister,in,law)
 def split_compound_words(text):
     # Split compound words using regex
     return re.sub(r'-', ',', text)
 
+# 4.4.	The NLP algorithm shall remove all words less than 4 characters long unless the word is determined to be an acronym.
 def filter_words(words, stopwords, acronyms):
     # Remove words less than 4 characters (except acronyms)
     filtered_words = []
@@ -49,12 +68,14 @@ def filter_words(words, stopwords, acronyms):
             filtered_words.append(word)
     return filtered_words
 
+# 4.3.	The NLP algorithm shall remove all definite articles, Demonstrative Determiners, Distributive Determiners and Interrogative Determiners from the text leveraging a NLP algorithm.
 def remove_specific_determiners(words):
     # Define lists of determiners to remove
     definite_articles = {"the"}
     demonstrative_determiners = {"this", "that", "these", "those"}
     distributive_determiners = {"each", "every", "either", "neither"}
     interrogative_determiners = {"which", "what", "whose"}
+    # 4.5.	The NLP algorithm shall remove all instances of possessive determiners except for those determined to be as part of a technological name or user role/name
     possessive_determiners = {"my", "your", "his", "her", "its", "our", "their"}
     
     all_determiners = (definite_articles | demonstrative_determiners |
@@ -129,7 +150,8 @@ class WebScraper:
     def __init__(self, urls):
         self.urls = urls
         self.hierarchy = self.organize_urls(urls)
-
+        
+# 3.1.	The system shall organize URLs into a hierarchy tree structure to facilitate structured exploration, enabling efficient parallel processing and CSV generation.
     def organize_urls(self, urls):
         # Group URLs by domain into a hierarchy
         hierarchy = defaultdict(list)
@@ -140,6 +162,7 @@ class WebScraper:
 
     async def fetch_page(self, session, url):
         try:
+            # 3.4.	The web scraper shall leverage aiohttp in order to parallelize web scraping.
             async with session.get(url, timeout=10) as response:
                 html = await response.text()
                 soup = BeautifulSoup(html, 'html.parser')
@@ -148,6 +171,7 @@ class WebScraper:
                 text = ' '.join([tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'span'])])
 
                 # Extract words from logos, labels, and class titles
+                # 3.2.	The scraper algorithm shall be modified to extract all words associated with logos, labels and class titles.
                 logo_text = ' '.join([tag['alt'] for tag in soup.find_all('img', alt=True)])
                 label_text = ' '.join([tag.get_text() for tag in soup.find_all('label')])
                 class_text = ' '.join([tag['class'][0] for tag in soup.find_all(class_=True) if tag.get('class')])
@@ -159,6 +183,7 @@ class WebScraper:
             print(f"Error fetching {url}: {e}")
             return url, ""
 
+# 3.3.	The scraper algorithm shall be modified to perform batch processing in order to increase the efficiency.
     async def scrape_pages(self):
         results = []
         async with aiohttp.ClientSession() as session:
