@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.mdp3 import CredentialGeneratorMDP
+from app.ml.mdp3 import CredentialGeneratorMDP
 
 router = APIRouter()
 

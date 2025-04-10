@@ -8,7 +8,7 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
-from AI_Wordlist import AIWordlist
+from app.ml.AI_Wordlist import AIWordlist
 
 #Natural Language Processing routine that cleans CSV text 
 def nlp_subroutine(csv_path: str):
