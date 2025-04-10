@@ -25,9 +25,14 @@ async def generate_credentials(
         with open(wordlist_path, "wb") as f:
             f.write(await wordlist.read())
 
+
+        print("CSV path:", csv_path)
+        print("Wordlist path:", wordlist_path)
         # Run the credential generator
         generator = CredentialGeneratorMDP(csv_path, wordlist_path)
         credentials = generator.generate_credentials(10)
+
+        print("Generated credentials:", credentials)
 
         # Format the response
         response_data = {
