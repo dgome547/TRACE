@@ -6,6 +6,13 @@
   let credentials = [];
   let isLoading = false;
 
+  // Credential config
+  let usernameLength = 8;
+  let passwordLength = 12;
+  let useNumbers = true;
+  let useSymbols = true;
+  let useUppercase = true;
+
   async function handleGenerate() {
     if (!csvFile && !csvPath || !wordlistFile && !wordlistPath) {
       alert("Please provide both files or paths.");
@@ -13,13 +20,20 @@
     }
 
     isLoading = true;
-
     const formData = new FormData();
+
     if (csvFile) formData.append("csv_file", csvFile);
     formData.append("csv_path", csvPath);
 
     if (wordlistFile) formData.append("wordlist", wordlistFile);
     formData.append("wordlist_path", wordlistPath);
+
+    // Append generation settings
+    formData.append("username_length", usernameLength);
+    formData.append("password_length", passwordLength);
+    formData.append("use_numbers", useNumbers);
+    formData.append("use_symbols", useSymbols);
+    formData.append("use_uppercase", useUppercase);
 
     try {
       const res = await fetch('http://localhost:8000/api/ml/generate', {
@@ -33,11 +47,7 @@
       }
 
       const data = await res.json();
-      if (data.error) {
-        alert("Backend Error: " + data.error);
-      } else {
-        credentials = data.credentials;
-      }
+      credentials = data.credentials;
     } catch (error) {
       alert("Failed to generate credentials.\n\n" + error.message);
     } finally {
@@ -47,11 +57,8 @@
 
   function downloadCSV() {
     if (!credentials.length) return;
-
     const header = "ID,Username,Password\n";
-    const rows = credentials
-      .map((cred, index) => `${index + 1},${cred.username},${cred.password}`)
-      .join("\n");
+    const rows = credentials.map((cred, i) => `${i + 1},${cred.username},${cred.password}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
 
@@ -99,11 +106,16 @@
   }
 
   input[type="file"],
-  input[type="text"] {
+  input[type="text"],
+  input[type="number"] {
     width: 100%;
     padding: 8px;
     font-size: 14px;
     margin-bottom: 16px;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 6px;
   }
 
   button {
@@ -142,17 +154,27 @@
   <h2>Configuration</h2>
 
   <form on:submit|preventDefault={handleGenerate}>
-    <label for="csv-path">CSV Path (optional)</label>
-    <input id="csv-path" type="text" bind:value={csvPath} placeholder="e.g. temp/web_text.csv" />
+    <label>CSV Path (optional)</label>
+    <input type="text" bind:value={csvPath} placeholder="e.g. temp/web_text.csv" />
 
-    <label for="csv">Upload CSV File</label>
-    <input id="csv" type="file" accept=".csv" on:change={e => csvFile = e.target.files[0]} />
+    <label>Upload CSV File</label>
+    <input type="file" accept=".csv" on:change={e => csvFile = e.target.files[0]} />
 
-    <label for="wordlist-path">Wordlist Path (optional)</label>
-    <input id="wordlist-path" type="text" bind:value={wordlistPath} placeholder="e.g. temp/wordlist.txt" />
+    <label>Wordlist Path (optional)</label>
+    <input type="text" bind:value={wordlistPath} placeholder="e.g. temp/wordlist.txt" />
 
-    <label for="wordlist">Upload Wordlist (.txt)</label>
-    <input id="wordlist" type="file" accept=".txt" on:change={e => wordlistFile = e.target.files[0]} />
+    <label>Upload Wordlist (.txt)</label>
+    <input type="file" accept=".txt" on:change={e => wordlistFile = e.target.files[0]} />
+
+    <label>Username Length</label>
+    <input type="number" min="4" max="20" bind:value={usernameLength} />
+
+    <label>Password Length</label>
+    <input type="number" min="8" max="32" bind:value={passwordLength} />
+
+    <label><input type="checkbox" bind:checked={useNumbers} /> Include Numbers</label>
+    <label><input type="checkbox" bind:checked={useSymbols} /> Include Symbols</label>
+    <label><input type="checkbox" bind:checked={useUppercase} /> Use Uppercase</label>
 
     <button type="submit" disabled={isLoading}>
       {isLoading ? 'Generating...' : 'Generate'}
@@ -160,12 +182,11 @@
   </form>
 
   {#if isLoading}
-    <p>Generating credentials, please wait...</p>
+    <p>⏳ Generating credentials, please wait...</p>
   {/if}
 
   {#if credentials.length}
     <h2>Generated Credentials</h2>
-
     <table>
       <thead>
         <tr>
@@ -185,8 +206,6 @@
       </tbody>
     </table>
 
-    <button on:click={downloadCSV} style="margin-top: 16px;">
-    Download CSV
-    </button>
+    <button on:click={downloadCSV}>📥 Download CSV</button>
   {/if}
 </div>
