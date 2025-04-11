@@ -228,7 +228,12 @@ class CredentialGeneratorMDP:
 
     # Build state transitions for username and password generation
     def build_state_transitions(self):
-        username_data = set(self.preprocess_text(self.web_text) + self.wordlists)
+        if isinstance(self.wordlists, str):
+            wordlist_data = [self.wordlists]
+        else:
+            wordlist_data = self.wordlists
+
+        username_data = set(self.preprocess_text(self.web_text) + wordlist_data)
         password_data = set(word for word in username_data if len(word) >= 8)
 
         for word in username_data:
