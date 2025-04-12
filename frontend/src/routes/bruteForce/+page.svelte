@@ -85,7 +85,7 @@
             type="text" 
             id="target-url" 
             bind:value={targetURL} 
-            placeholder="https://juice-shop.herokuapp.com" 
+            placeholder="EX: https://juice-shop.herokuapp.com" 
             class={errors.targetURL ? 'error' : ''}
             on:input={validateForm}
           />
@@ -101,7 +101,6 @@
               type="text" 
               id="word-list" 
               bind:value={wordListPath} 
-              placeholder="/home/alex/Desktop/wordlist/web.txt" 
               class={errors.wordList ? 'error' : ''}
               on:input={validateForm}
             />
