@@ -1,31 +1,143 @@
-from crawler import Crawler  # Import the updated crawler
+import asyncio
+import json
+import sys
+import os
+from datetime import datetime
+
+# Make sure the modules are in path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils import setup_logging, validate_config
+from crawler import run_crawler, Crawler
+from httphandler import HttpHandler
 
 
-# Mock HTTP Handler for Testing
-class MockHttpHandler:
+class MockWebSocket:
+    """Mock websocket for testing"""
+
     def __init__(self):
-        self.pages = {
-            "http://example.com": "<html><body><a href='http://example.com/page1'>Page 1</a><a href='http://example.com/page2'>Page 2</a></body></html>",
-            "http://example.com/page1": "<html><body><a href='http://example.com/page3'>Page 3</a></body></html>",
-            "http://example.com/page2": "<html><body><p>No more links here.</p></body></html>",
-            "http://example.com/page3": "<html><body><p>End of crawl.</p></body></html>",
-        }
+        self.messages = []
 
-    def fetch(self, url, timeout):
-        if url in self.pages:
-            class MockResponse:
-                def __init__(self, text):
-                    self.text = text
+    async def send_json(self, data):
+        self.messages.append(data)
+        progress = data.get('progress', 0)
+        if 'current_result' in data:
+            url = data['current_result'].get('url', '')
+            print(f"Progress: {progress}% - Processing: {url}")
 
-            return MockResponse(self.pages[url])
-        return None
+    def get_messages(self):
+        return self.messages
 
 
-# Running the mock tester
+async def test_crawler_config():
+    """Test crawler configuration validation"""
+    print("\n=== Testing Configuration Validation ===")
+
+    # Valid configuration
+    valid_config = {
+        "targetUrl": "https://example.com",
+        "crawlDepth": 2,
+        "limitPages": 10,
+        "requestDelay": 1.0,
+    }
+
+    is_valid, errors = validate_config(valid_config)
+    print(f"Valid config test passed: {is_valid}")
+
+    # Invalid configuration (missing target URL)
+    invalid_config = {
+        "crawlDepth": 2,
+        "limitPages": 10,
+    }
+
+    is_valid, errors = validate_config(invalid_config)
+    print(f"Invalid config test (missing URL): {not is_valid}")
+    print(f"Error messages: {errors}")
+
+    # Invalid configuration (negative value)
+    invalid_config2 = {
+        "targetUrl": "https://example.com",
+        "crawlDepth": -1,
+    }
+
+    is_valid, errors = validate_config(invalid_config2)
+    print(f"Invalid config test (negative value): {not is_valid}")
+    print(f"Error messages: {errors}")
+
+
+async def test_crawler_run():
+    """Test running the crawler with example website"""
+    print("\n=== Testing Crawler Run ===")
+
+    # Configuration for a small test
+    config = {
+        "targetUrl": "https://example.com",
+        "crawlDepth": 2,
+        "limitPages": 10,
+        "requestDelay": 1.0,
+        "outputFile": f"test_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    }
+
+    # Create a mock websocket
+    mock_socket = MockWebSocket()
+
+    # Run the crawler
+    print(f"Starting crawler test with config: {json.dumps(config, indent=2)}")
+    result = await run_crawler(config, mock_socket)
+
+    # Check results
+    print(f"Crawler completed with status: {result['status']}")
+    if result['status'] == 'success':
+        print(f"Pages processed: {result['stats']['processed_requests']}")
+        print(f"Results exported to: {config['outputFile']}")
+    else:
+        print(f"Error: {result.get('message', 'Unknown error')}")
+
+    # Count number of updates sent via websocket
+    print(f"WebSocket received {len(mock_socket.messages)} updates")
+
+
+async def test_crawler_pause_resume():
+    """Testing pausing and resuming the crawler"""
+    print("\n=== Testing Crawler Pause/Resume ===")
+
+    crawler = Crawler()
+    crawler.state["running"] = True
+
+    # Test pause
+    result = await crawler.pause_crawler()
+    print(f"Pause result: {result['status']}")
+
+    # Test resume
+    result = await crawler.resume_crawler()
+    print(f"Resume result: {result['status']}")
+
+    # Test stop without confirmation
+    result = await crawler.stop_crawler(confirm=False)
+    print(f"Stop without confirmation: {result['status']}")
+
+    # Test stop with confirmation
+    result = await crawler.stop_crawler(confirm=True)
+    print(f"Stop with confirmation: {result['status']}")
+
+
+async def main():
+    """Run all tests"""
+    setup_logging()
+
+    print("=== Starting Crawler Tests ===")
+
+    # Run configuration tests
+    await test_crawler_config()
+
+    # Run crawler tests
+    await test_crawler_run()
+
+    # Run crawler control tests
+    await test_crawler_pause_resume()
+
+    print("\n=== All Tests Completed ===")
+
+
 if __name__ == "__main__":
-    crawler = Crawler(output_file="mock_crawl_results.csv")  # Now this works!
-    config = {"depth_limit": 2, "timeout": 1}  # Limit to 2 levels deep
-    mock_handler = MockHttpHandler()
-
-    print("Starting Mock Crawler Test:")
-    crawler.start_crawling("http://example.com", config, mock_handler)
+    asyncio.run(main())
