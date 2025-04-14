@@ -1,3 +1,5 @@
+
+
 import random
 import re
 from collections import defaultdict
@@ -8,17 +10,23 @@ import os
 import time
 import requests
 from bs4 import BeautifulSoup
-from AI_Wordlist import AIWordlist
+from app.ml.AI_Wordlist import AIWordlist
 
 #Natural Language Processing routine that cleans CSV text 
 def nlp_subroutine(csv_path: str):
     stopwords = {"the", "and", "or"} #Words to clean from CSV file
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    
     cleaned_rows = []
     with open(csv_path, "r", encoding="utf-8") as infile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
+
+        if "content" not in fieldnames:
+            fieldnames.append("content")
+
+
         if not fieldnames or not {"id", "content", "url"}.issubset(fieldnames):
             raise ValueError("CSV must contain columns: id, content, url")
         for row in reader:
@@ -93,6 +101,7 @@ def load_web_text(csv_path: str) -> str:
     try:
         with open(csv_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
+            
             if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
                 raise ValueError("CSV must contain columns: id, content, url")
             contents = []
@@ -221,6 +230,14 @@ class CredentialGeneratorMDP:
         self.min_username_length = 5
         self.min_password_length = 10
 
+        self.settings = {
+            "username_length": 8,
+            "password_length": 12,
+            "use_numbers": True,
+            "use_symbols": True,
+            "use_uppercase": True
+        }
+
     # Preprocess text data
     def preprocess_text(self, text: str) -> List[str]:
         words = re.findall(r'\w+', text.lower())
@@ -228,7 +245,12 @@ class CredentialGeneratorMDP:
 
     # Build state transitions for username and password generation
     def build_state_transitions(self):
-        username_data = set(self.preprocess_text(self.web_text) + self.wordlists)
+        if isinstance(self.wordlists, str):
+            wordlist_data = [self.wordlists]
+        else:
+            wordlist_data = self.wordlists
+
+        username_data = set(self.preprocess_text(self.web_text) + wordlist_data)
         password_data = set(word for word in username_data if len(word) >= 8)
 
         for word in username_data:
@@ -249,6 +271,9 @@ class CredentialGeneratorMDP:
                 if i == 0:
                     self.password_mdp.initial_states.append(state)
 
+    def update_settings(self, settings: dict):
+        self.settings.update({k: v for k, v in settings.items() if k in self.settings})
+
     # Generate a username and password pair
     def generate_credential(self) -> Dict[str, str]:
         # Generate username
@@ -268,7 +293,12 @@ class CredentialGeneratorMDP:
             self.username_mdp.update_q_value(state, action, next_char, next_state, reward)
             state = next_state
 
-        username = f"{username}{random.randint(1, 999)}"
+        if self.settings["use_numbers"]:
+            username += str(random.randint(1, 99))
+
+        if self.settings["use_symbols"]:
+            username += random.choice("_.-")
+        #username = f"{username}{random.randint(1, 999)}"
         self.username_mdp.used_usernames.add(username)
 
         # Generate password
@@ -278,7 +308,7 @@ class CredentialGeneratorMDP:
             state = random.choice(self.password_mdp.initial_states)
 
         password = state[9:]
-        while len(password) < self.min_password_length:
+        while len(password) < self.settings["password_length"]:
             action, next_char = self.password_mdp.choose_action(state)
             if not action or not next_char:
                 break
@@ -288,7 +318,14 @@ class CredentialGeneratorMDP:
             self.password_mdp.update_q_value(state, action, next_char, next_state, reward)
             state = next_state
 
-        password = self.enhance_password(password)
+        if self.settings["use_uppercase"]:
+            password = password.capitalize()
+        if self.settings["use_symbols"]:
+            password += random.choice("!@#$%^&*")
+        if self.settings["use_numbers"]:
+            password += str(random.randint(0, 9))
+
+        #password = self.enhance_password(password)
         return username, password
 
     # Enhance the generated password
@@ -298,7 +335,7 @@ class CredentialGeneratorMDP:
         return enhanced
 
     # Generate multiple credentials
-    def generate_credentials(self, count: int = 10) -> Dict[str, str]:
+    def generate_credentials(self, count: int = 50) -> Dict[str, str]:
         self.build_state_transitions()
         credentials = {}
         for _ in range(count):
@@ -319,6 +356,8 @@ def main():
 
     scraper = WebScraper(urls)
     scraper.generate_csv(csv_path)
+
+    
 
     #Use NLP routine to clean CSV file
     nlp_subroutine(csv_path)

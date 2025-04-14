@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/davidgomez/Library/CloudStorage/OneDrive-TheUniversityofTexasatElPaso/Semesters/Spring 2025/SW2/TRACE/backend/venv/bin/python3.12" "$0" "$@"
-' '''
+#!/Users/anthonytrancoso/Documents/GitHub/TRACE/backend/venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,67 +1,47 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.crawler.crawler import Crawler, crawler_state
+from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
-import csv, os, asyncio
-from app import state
-
+import os
+from app.ml.mdp3 import CredentialGeneratorMDP
 
 router = APIRouter()
 
-@router.websocket("/ws/crawler")
-async def websocket_crawler(websocket: WebSocket):
-    await websocket.accept()
-    print("WebSocket connected.")
+# Ensure temp directory exists
+TEMP_DIR = "temp"
+os.makedirs(TEMP_DIR, exist_ok=True)
 
-    # Use config stored in state.py
-    config = state.active_config
-    if not config:
-        await websocket.send_text("No crawler config received")
-        await websocket.close()
-        return
-
-    crawler_state["running"] = True
-    crawler_state["paused"] = False
-    crawler_state["stopped"] = False
-
+@router.post("/api/ml/generate")
+async def generate_credentials(
+    csv_file: UploadFile = File(...),
+    wordlist: UploadFile = File(...)
+):
     try:
-        crawler = Crawler()
+        # Save uploaded CSV file
+        csv_path = os.path.join(TEMP_DIR, csv_file.filename)
+        with open(csv_path, "wb") as f:
+            f.write(await csv_file.read())
 
-        class DummyHttp:
-            def fetch(self, url, timeout):
-                import requests
-                try:
-                    return requests.get(url, timeout=timeout)
-                except:
-                    return None
-
-        await crawler.start_crawling(
-            start_url=config["targetUrl"],
-            config=config,
-            http_handler=DummyHttp(),
-            websocket=websocket
-        )
-
-        await websocket.close()
-        print("Crawler finished and WebSocket closed.")
-
-    except WebSocketDisconnect:
-        print(" WebSocket disconnected.")
-        crawler_state["stopped"] = True
+        # Save uploaded wordlist
+        wordlist_path = os.path.join(TEMP_DIR, wordlist.filename)
+        with open(wordlist_path, "wb") as f:
+            f.write(await wordlist.read())
 
 
-@router.get("/api/crawler/results")
-async def get_crawl_results():
-    print(" GET /api/crawler/results called")
-    results = []
-    try:
-        file_path = os.path.abspath("crawl_results.csv")
-        print("Looking for CSV at:", file_path)  # Debug print
-        with open(file_path, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                results.append(row)
-        print("CSV Data fetched:", results)  # Debug print
-        return JSONResponse(content=results)
+        print("CSV path:", csv_path)
+        print("Wordlist path:", wordlist_path)
+        # Run the credential generator
+        generator = CredentialGeneratorMDP(csv_path, wordlist_path)
+        credentials = generator.generate_credentials(10)
+
+        print("Generated credentials:", credentials)
+
+        # Format the response
+        response_data = {
+            "credentials": [{"username": u, "password": p} for u, p in credentials.items()]
+        }
+        return JSONResponse(content=response_data)
+
     except Exception as e:
-        print("Error reading CSV:", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to generate credentials: {str(e)}"}
+        )
