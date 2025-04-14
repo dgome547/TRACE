@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from app.routes import routes, crawler_routes
+from app.routes import routes, crawler_routes, bruteforce_routes
 from app import state
 
 app = FastAPI()
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(routes.router)
 app.include_router(crawler_routes.router)
+app.include_router(bruteforce_routes.router)
 
 # Define config schema to receive from frontend
 class CrawlerConfig(BaseModel):
