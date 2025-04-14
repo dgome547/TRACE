@@ -35,7 +35,7 @@ async def generate_credentials(
     # Initialize the generator
     generator = CredentialGeneratorMDP(csv_path, wordlist_path)
 
-    # 👇 Apply user settings from form
+    # Apply user settings from form
     generator.update_settings({
         "username_length": username_length,
         "password_length": password_length,
