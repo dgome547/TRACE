@@ -1,6 +1,7 @@
 <script>
   import Slider from "$lib/components/Slider.svelte";
   import Button from "$lib/components/Button.svelte";
+  import FileUploader from "$lib/components/FileUploader.svelte";
 
   let allowNumbers = false;
   let allowSymbols = false;
@@ -31,6 +32,11 @@
       wordlistPath = file.name; // or file.path (only works in Electron)
       console.log("Selected file:", file);
     }
+  }
+  
+  function handleWordlist(file) {
+    wordlistPath = file.name;
+    console.log("📄 Wordlist selected:", file);
   }
 
   async function handleGenerate() {
@@ -123,9 +129,11 @@
   <!-- Configuration Section -->
   <div class="section">
     <label>Word List *</label>
-    <input type="text" bind:value={wordlistPath} placeholder="/home/user/wordlist.txt" />
-    <br />
-    <button class="upload-btn" on:click={handleUpload}>Upload Wordlist</button>
+    <FileUploader
+      label="Upload Wordlist"
+      accept=".txt,.csv"
+      onFileSelect={handleWordlist}
+    />
   </div>
 
   <!-- Username & Password Settings -->
