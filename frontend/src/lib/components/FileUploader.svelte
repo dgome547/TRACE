@@ -63,7 +63,7 @@
 <div>
   <label>{label}</label>
   <div class="upload-container" on:click={triggerInput}>
-    <p>📂 Click to upload</p>
+    <p>Click to upload</p>
     {#if selectedFileNames.length}
       <div class="file-name">
         {#each selectedFileNames as name}

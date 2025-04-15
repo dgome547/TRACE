@@ -36,7 +36,7 @@
   
   function handleWordlist(file) {
     wordlistPath = file.name;
-    console.log("📄 Wordlist selected:", file);
+    console.log("Wordlist selected:", file);
   }
 
   async function handleGenerate() {
