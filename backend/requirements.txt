@@ -6,3 +6,4 @@ bs4
 urljoin
 dotenv
 pydantic
+python-multipart
