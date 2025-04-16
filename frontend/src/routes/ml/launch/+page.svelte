@@ -10,6 +10,8 @@
 
   let useWordlist = false;
   let wordlistPath = '';
+  let uploadedFiles = [];
+
 
   let usernameOptions = {
     characters: false,
@@ -33,36 +35,48 @@
       console.log("Selected file:", file);
     }
   }
+
+  function logPayloadAndTestRequest() {
+  console.log("📦 Payload being sent:", {
+    wordlistPath,
+    usernameOptions,
+    passwordOptions
+  });
+}
   
-  function handleWordlist(file) {
-    wordlistPath = file.name;
-    console.log("Wordlist selected:", file);
+function handleWordlist(files) {
+  uploadedFiles = files; // Array of File objects
+  console.log("📁 Uploaded files:", uploadedFiles);
+}
+
+async function handleGenerate() {
+  try {
+    const formData = new FormData();
+
+    // Append uploaded files (optional)
+    uploadedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    // Append other JSON fields as strings
+    formData.append("usernameOptions", JSON.stringify(usernameOptions));
+    formData.append("passwordOptions", JSON.stringify(passwordOptions));
+
+    const res = await fetch('/api/ml/generate', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error("❌ Failed to generate credentials");
+    
+    const data = await res.json();
+    console.log("✅ Server response:", data);
+    alert("✅ Credentials generated!");
+  } catch (err) {
+    console.error("🚨 Generation error:", err);
+    alert("❌ Failed to generate credentials.");
   }
-
-  async function handleGenerate() {
-    try {
-      const res = await fetch('/api/ml/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wordlistPath,
-          usernameOptions,
-          passwordOptions
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to generate credentials");
-      }
-
-      const data = await res.json();
-      generatedCredentials = data.credentials;
-      alert("Credentials generated!");
-    } catch (err) {
-      console.error("Generation error:", err);
-      alert("Failed to generate credentials.");
-    }
-  }
+}
 
 </script>
 
@@ -126,6 +140,8 @@
 <div class="main">
   <h2>AI Generator</h2>
 
+  
+
   <!-- Configuration Section -->
   <div class="section">
     <label>Word List *</label>
@@ -142,8 +158,8 @@
       <label>Username</label>
       <div class="toggle-group">
         <Slider label="Characters" bind:checked={usernameOptions.characters} />
-        <Slider label="Numbers" bind:checked={usernameOptions.numbers} />
-        <Slider label="Symbols" bind:checked={usernameOptions.symbols} />
+        <Slider label="Numbers   " bind:checked={usernameOptions.numbers} />
+        <Slider label="Symbols   " bind:checked={usernameOptions.symbols} />
         <input type="number" min="1" bind:value={usernameOptions.length} placeholder="Length" />
       </div>
     </div>
@@ -159,5 +175,5 @@
     </div>
   </div>
 
-  <Button label="Generate" on:click={handleGenerate} />
+  <button class="app-button" on:click={handleGenerate}>Generate</button>
 </div>

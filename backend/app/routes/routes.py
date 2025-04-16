@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 import os, csv
+from app.routes import ml_routes
 
 load_dotenv()
 
@@ -10,8 +11,10 @@ NEO4J_URI = os.getenv("NEO4J_URI")
 NEO4J_USER = os.getenv("NEO4J_USER")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
-#This is the router FastAPI is looking for in main.py
+# This is the router FastAPI is looking for in main.py
 router = APIRouter()
+
+router.include_router(ml_routes.router)
 
 # Connect to Neo4j
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
@@ -32,4 +35,3 @@ def get_simple_tree():
             return {record["project"]: record["scans"] for record in results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
