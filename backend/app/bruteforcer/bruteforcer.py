@@ -5,10 +5,16 @@ import logging
 import re
 import json
 import csv
+import sys
+import os
+
+# Add the backend directory to the system path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../backend/app')))
+
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-from httphandler import HttpHandler
-from utils import (
+from app.bruteforcer.httphandler import HttpHandler
+from app.bruteforcer.utils import (
     validate_url,
     validate_wordlist,
     load_wordlist,
