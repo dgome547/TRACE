@@ -10,7 +10,6 @@ router = APIRouter()
 @router.post("/api/bruteforce/scan")
 async def start_brute_force_scan(
     target_url: str = Form(...),
-    wordlist_path: str = Form(""),
     wordlist_file: UploadFile = None,
     max_concurrent_requests: int = Form(5),
     request_timeout: float = Form(5.0),

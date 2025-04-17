@@ -42,7 +42,6 @@
 
     const formData = new FormData();
     formData.append("target_url", targetURL);
-    formData.append("wordlist_path", wordListFile); // fallback path if file not re-uploaded
 
     if (typeof wordListFile === 'object') {
       formData.append("wordlist_file", wordListFile);
