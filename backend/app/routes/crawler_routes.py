@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.crawler.crawler import Crawler, crawler_state
+from app.crawler.crawler import Crawler
 from fastapi.responses import JSONResponse
 import csv, os, asyncio
 from app import state

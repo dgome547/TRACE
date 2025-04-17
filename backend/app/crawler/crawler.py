@@ -8,8 +8,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import json
 
-from app.httphandler import HttpHandler
-from utils import valid_url, validate_config
+from app.bruteforcer.httphandler import HttpHandler
+from app.crawler.utils import valid_url, validate_config
 
 
 class Crawler:

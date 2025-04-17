@@ -58,7 +58,7 @@
     formData.append("additional_parameters", additionalParams);
 
     try {
-      const res = await fetch("http://localhost:8000/api/bruteforce/scan", {
+      const res = await fetch("http://localhost:5000/api/bruteforce/scan", {
         method: "POST",
         body: formData
       });
