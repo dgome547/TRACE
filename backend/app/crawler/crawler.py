@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import json
 
-from httphandler import HttpHandler
+from app.httphandler import HttpHandler
 from utils import valid_url, validate_config
 
 
