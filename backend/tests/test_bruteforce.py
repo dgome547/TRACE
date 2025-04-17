@@ -1,7 +1,9 @@
+import json
 import pytest
 import sys
 import os
-
+#in the trace root folder run this command to run the test pytest -s .\backend\tests\test_bruteforce.py
+#pip install pytest-asyncio
 # Update sys.path to ensure it includes the backend directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../backend')))
 
@@ -42,6 +44,10 @@ async def test_run_live_bruteforce():
     }
 
     scan_output = await brute_forcer.start_scan(config)
+    print("Scan Results:")
+    print(json.dumps(scan_output["results"], indent=2))
+
+
 
     # Basic checks to ensure scan was performed
     assert isinstance(scan_output, dict), "Scan output is not a dictionary."
@@ -56,6 +62,7 @@ async def test_run_live_bruteforce():
         output_csv_path = os.path.join(output_folder, output_csv)
 
         # Export to CSV if we found anything
+        
         brute_forcer._export_results_to_csv(output_csv_path)
         assert os.path.exists(output_csv_path), f"CSV export failed to {output_csv_path}."
         print(f"Results exported to {output_csv_path}")
