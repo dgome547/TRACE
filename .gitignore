@@ -1,0 +1,75 @@
+# === PYTHON BACKEND ===
+# Virtual environments
+backend/venv/
+.venv/
+env/
+venv/
+
+# Compiled Python files and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*$py.class
+
+# Testing & coverage
+.pytest_cache/
+backend/.pytest_cache/
+*.cover
+coverage.*
+htmlcov/
+.cache/
+
+# Logs & dumps
+*.log
+*.out
+*.pid
+
+# Env files
+.env
+.env.*
+
+# PyInstaller, build artifacts
+*.spec
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Database or app-generated files
+*.sqlite3
+*.db
+*.csv
+
+# === FRONTEND (Svelte) ===
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/.vite/
+frontend/.vite-temp/
+frontend/.svelte2tsx-language-server-files/
+
+# Frontend logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# === OS / IDE / Editor files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VSCode / JetBrains / Sublime
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === General ===
+# Temporary files
+*.tmp
+*.swp
+*.bak
+
+# === Git ignore for TRACE-assets (if generated)
+TRACE-assets/
