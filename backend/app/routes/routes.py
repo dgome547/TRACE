@@ -14,7 +14,6 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 # This is the router FastAPI is looking for in main.py
 router = APIRouter()
 
-router.include_router(ml_routes.router)
 
 # Connect to Neo4j
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))

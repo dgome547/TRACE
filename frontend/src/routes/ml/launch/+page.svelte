@@ -50,28 +50,30 @@ function handleWordlist(files) {
 }
 
 async function handleGenerate() {
+  const formData = new FormData();
+
+  // Must stringify JSON for FormData text fields
+  formData.append("usernameOptions", JSON.stringify(usernameOptions));
+  formData.append("passwordOptions", JSON.stringify(passwordOptions));
+
+  // Optional: Add files if uploaded
+  for (let file of uploadedFiles) {
+    formData.append("files", file); // 'files' must match FastAPI parameter name
+  }
+
   try {
-    const formData = new FormData();
-
-    // Append uploaded files (optional)
-    uploadedFiles.forEach((file) => {
-      formData.append("files", file);
-    });
-
-    // Append other JSON fields as strings
-    formData.append("usernameOptions", JSON.stringify(usernameOptions));
-    formData.append("passwordOptions", JSON.stringify(passwordOptions));
-
-    const res = await fetch('/api/ml/generate', {
-      method: 'POST',
+    const res = await fetch("http://localhost:8000/api/ml/generate", {
+      method: "POST",
       body: formData
     });
 
-    if (!res.ok) throw new Error("❌ Failed to generate credentials");
-    
+    if (!res.ok) {
+      throw new Error("❌ Failed to generate credentials");
+    }
+
     const data = await res.json();
-    console.log("✅ Server response:", data);
-    alert("✅ Credentials generated!");
+    console.log("✅ Response:", data);
+    alert("✅ Credentials submitted successfully!");
   } catch (err) {
     console.error("🚨 Generation error:", err);
     alert("❌ Failed to generate credentials.");

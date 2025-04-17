@@ -48,20 +48,3 @@ async def websocket_crawler(websocket: WebSocket):
         print(" WebSocket disconnected.")
         crawler_state["stopped"] = True
 
-
-@router.get("/api/crawler/results")
-async def get_crawl_results():
-    print(" GET /api/crawler/results called")
-    results = []
-    try:
-        file_path = os.path.abspath("crawl_results.csv")
-        # print("Looking for CSV at:", file_path)  # Debug print
-        with open(file_path, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                results.append(row)
-        # print("CSV Data fetched:", results)  # Debug print
-        return JSONResponse(content=results)
-    except Exception as e:
-        print("Error reading CSV:", e)
-        return JSONResponse(status_code=500, content={"error": str(e)})
