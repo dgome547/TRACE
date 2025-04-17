@@ -6,3 +6,6 @@ bs4
 urljoin
 dotenv
 pydantic
+aiohttp
+python-multipart
+pytest-asyncio
