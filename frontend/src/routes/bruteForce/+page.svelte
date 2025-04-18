@@ -1,8 +1,11 @@
 <script>
 	import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
-    let isLoading = false;
+  import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
+  import { resultStore } from '$lib/stores/resultStore';
 
+
+    
     
     // Form data
     let targetURL = '';
@@ -18,6 +21,7 @@
       targetURL: false,
       wordList: false
     };
+    let isLoading = false;
     
     // Component state
     let isStartEnabled = false;
@@ -56,20 +60,23 @@
     formData.append("filter_by_content_length", filterByLength);
     formData.append("additional_parameters", additionalParams);
 
+    
+    isLoading = true;
     try {
       const res = await fetch("http://localhost:5000/api/bruteforce/scan", {
         method: "POST",
         body: formData
       });
 
-      if (!res.ok) {
+      if (!res.ok) { 
         const error = await res.text();
         throw new Error(`Server Error ${res.status}: ${error}`);
       }
 
       const result = await res.json();
       console.log("Scan Result:", result);
-      // TODO: Add routing to Results tab or UI updates
+      resultStore.set(result); // Store the result in the Svelte store
+      goto('/bruteForce/results');
     } catch (err) {
       alert("Error starting scan:\n\n" + err.message);
     }
