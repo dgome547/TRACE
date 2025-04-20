@@ -25,6 +25,19 @@ __pycache__/
 !.env.example
 !.env.test
 
+# Generated internal files
+**/internal.js
+**/internal/
+*.d.ts
+!src/**/*.d.ts  # If you write your own declaration files in src/
+
+# SvelteKit / Vite build outputs
+.svelte-kit/
+.vite/
+node_modules/
+build/
+dist/
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
