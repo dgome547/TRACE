@@ -7,3 +7,5 @@ urljoin
 dotenv
 pydantic
 python-multipart
+numpy
+requests
