@@ -1,36 +1,41 @@
-
-
 <script>
-// Import Svelte lifecycle and utilities
 import { onMount } from 'svelte';
 import { goto } from '$app/navigation';
 import { page } from '$app/stores';
 import { get } from 'svelte/store';
 
-// Reactive variables populated from navigation state
 let credentials = [];
 let runtime = 0;
 
-// Get the navigation state passed from the previous page (launch)
+// Watch for the page navigation state
 $: {
   const state = get(page).state ?? {};
   credentials = state.credentials ?? [];
-  runtime = Number(state.runtime ?? 0); 
+  runtime = Number(state.runtime ?? 0);
 }
 
-// Compute counts based on received credentials
+// Compute counts
 let usernamesGenerated = credentials.length;
 let passwordsGenerated = credentials.filter(c => c.password).length;
 
-// Navigate back to the launch page to run generation again
+// Navigation function
 function reGenerate() {
   goto('/ml/launch');
 }
 
-// Placeholder for saving credentials to a wordlist (to be implemented)
+// Placeholder function
 function saveWordList() {
   alert('Save to wordlist functionality coming soon!');
 }
+
+// onMount triggers when page loads
+onMount(() => {
+  console.log("ML Results page mounted.");
+  console.log("Credentials loaded:", credentials);
+  console.log("Runtime (seconds):", runtime);
+
+  alert("AI Credential Generation Complete!\nCheck your results below.");
+});
 </script>
 
 <div class="main">
@@ -162,5 +167,4 @@ th {
   margin-left: 70px;
 }
 </style>
-
 
