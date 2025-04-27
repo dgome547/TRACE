@@ -1,5 +1,3 @@
-
-
 import random
 import re
 from collections import defaultdict
@@ -7,139 +5,200 @@ import numpy as np
 from typing import Dict, List, Tuple, Set
 import csv
 import os
-import time
-import requests
+import aiohttp
+import asyncio
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup
-from app.ml.AI_Wordlist import AIWordlist
+from .AI_Wordlist import AIWordlist
 
-#Natural Language Processing routine that cleans CSV text 
-def nlp_subroutine(csv_path: str):
-    stopwords = {"the", "and", "or"} #Words to clean from CSV file
-    if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+# =====================
+# Natural Language Processing (NLP) Subroutines
+# =====================
+
+def normalize_text(text):
+    text = re.sub(r'[\u201c\u201d\u2018\u2019\u2013\u2014]', '', text)
+    text = re.sub(r'[^\x00-\x7F]+', ' ', text)
+    text = text.encode('ascii', errors='ignore').decode('utf-8')
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def split_compound_words(text):
+    return re.sub(r'-', ' ', text)
+
+def filter_words(words, stopwords, acronyms):
+    filtered = []
+    for word in words:
+        if len(word) >= 4 or word.upper() in acronyms:
+            filtered.append(word)
+    return filtered
+
+def remove_specific_determiners(words):
+    definite_articles = {"the"}
+    demonstrative = {"this", "that", "these", "those"}
+    distributive = {"each", "every", "either", "neither"}
+    interrogative = {"which", "what", "whose"}
+    possessive = {"my", "your", "his", "her", "its", "our", "their"}
+    allowed_possessives = {"myaccount", "myprofile", "youradmin", "yourportal", "theirserver", "ourapp"}
     
+    remove = definite_articles | demonstrative | distributive | interrogative
+    cleaned = [
+        word for word in words if (
+            word.lower() not in remove and
+            (word.lower() not in possessive or word.lower() in allowed_possessives)
+        )
+    ]
+    return cleaned
+
+def nlp_subroutine(csv_path: str):
+    stopwords = {"and", "or"}
+    acronyms = {"AI", "NLP", "USA"}
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"CSV not found: {csv_path}")
+
     cleaned_rows = []
     with open(csv_path, "r", encoding="utf-8") as infile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
-
-        if "content" not in fieldnames:
-            fieldnames.append("content")
-
-
         if not fieldnames or not {"id", "content", "url"}.issubset(fieldnames):
-            raise ValueError("CSV must contain columns: id, content, url")
+            raise ValueError("CSV must have columns: id, content, url")
+
         for row in reader:
             text = row["content"] if row["content"] else ""
-            words = re.findall(r"\w+", text, flags=re.IGNORECASE)
-            filtered_words = [
-                word for word in words
-                if word.lower() not in stopwords
-            ]
-            cleaned_text = " ".join(filtered_words)
+            text = normalize_text(text)
+            text = split_compound_words(text)
+            words = re.findall(r'\w+', text, flags=re.IGNORECASE)
+            words = remove_specific_determiners(words)
+            words = filter_words(words, stopwords, acronyms)
+            cleaned_text = " ".join(words)
             row["content"] = cleaned_text
             cleaned_rows.append(row)
-    #Overwrite original CSV with cleaned text
+
     with open(csv_path, "w", newline="", encoding="utf-8") as outfile:
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(cleaned_rows)
-    print(f"Cleaned CSV '{csv_path}' file has been generated.")
 
-#Load URLs from a CSV file with columns 'id' and 'website'.
+    print(f"[NLP] Cleaned CSV: {csv_path}")
+
+
+# =====================
+# CSV Loading Helpers
+# =====================
+
 def load_urls_from_csv(csv_path: str) -> List[str]:
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
-    try:
-        urls = []
-        with open(csv_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            if not {'id', 'website'}.issubset(set(reader.fieldnames or [])):
-                raise ValueError("CSV must contain columns: id, website")
-            for row in reader:
-                if row['website']:
-                    urls.append(row['website'].strip())
-        return urls
-    except csv.Error as e:
-        raise ValueError(f"Error reading CSV file: {e}")
+        raise FileNotFoundError(f"CSV not found: {csv_path}")
 
-#Web scraper functions and will pull something out of the URLs provided.
-class WebScraper:
-    # Initialize with list of URLs
-    def __init__(self, urls):
-        self.urls = urls
+    urls = []
+    with open(csv_path, "r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        if not {"id", "website"}.issubset(set(reader.fieldnames or [])):
+            raise ValueError("CSV must have columns: id, website")
+        for row in reader:
+            if row["website"]:
+                urls.append(row["website"].strip())
+    return urls
 
-    # Scrape text content from web pages
-    def scrape_pages(self):
-        results = []
-        for i, url in enumerate(self.urls, 1):
-            try:
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.text, 'html.parser')
-                # Extract text from p, h1, h2, h3, and span tags
-                text = ' '.join([tag.get_text() for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'span'])])
-                results.append((i, text, url))
-                time.sleep(1)  # Be polite to servers
-            except Exception as e:
-                print(f"Error scraping {url}: {e}")
-        return results
-
-    # Generate CSV file with scraped data
-    def generate_csv(self, filename):
-        data = self.scrape_pages()
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(['id', 'content', 'url'])  # Header
-            csv_writer.writerows(data)
-        print(f"CSV file '{filename}' has been generated.")
-        
-# Load web text from a CSV file
 def load_web_text(csv_path: str) -> str:
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"CSV file not found: {csv_path}")
-    try:
-        with open(csv_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            
-            if not {'id', 'content', 'url'}.issubset(set(reader.fieldnames or [])):
-                raise ValueError("CSV must contain columns: id, content, url")
-            contents = []
-            for row in reader:
-                if row['content']:
-                    contents.append(row['content'].lower())
-        return " ".join(contents)
-    except csv.Error as e:
-        raise ValueError(f"Error reading CSV file: {e}")
+        raise FileNotFoundError(f"CSV not found: {csv_path}")
 
-# Load wordlist from a file
+    with open(csv_path, "r", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        if not {"id", "content", "url"}.issubset(set(reader.fieldnames or [])):
+            raise ValueError("CSV must have columns: id, content, url")
+        contents = [row["content"].lower() for row in reader if row["content"]]
+    return " ".join(contents)
+
 def load_wordlist(file_path: str) -> List[str]:
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Wordlist file not found: {file_path}")
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            words = [line.strip().lower() for line in file if line.strip()]
-        return words
-    except Exception as e:
-        raise ValueError(f"Error reading wordlist file: {e}")
+        raise FileNotFoundError(f"Wordlist not found: {file_path}")
 
-# Class for managing the Markov Decision Process for generating credentials
+    with open(file_path, "r", encoding="utf-8") as file:
+        words = [line.strip().lower() for line in file if line.strip()]
+    return words
+
+# =====================
+# WebScraper Class
+# =====================
+
+class WebScraper:
+    def __init__(self, urls):
+        self.urls = urls
+        self.hierarchy = self.organize_urls(urls)
+
+    def organize_urls(self, urls):
+        hierarchy = defaultdict(list)
+        for url in urls:
+            domain = urlparse(url).netloc
+            hierarchy[domain].append(url)
+        return hierarchy
+
+    async def fetch_page(self, session, url):
+        try:
+            async with session.get(url, timeout=10) as response:
+                html = await response.text()
+                soup = BeautifulSoup(html, "html.parser")
+                text = " ".join([tag.get_text() for tag in soup.find_all(["p", "h1", "h2", "h3", "span"])])
+                logo_text = " ".join([tag["alt"] for tag in soup.find_all("img", alt=True)])
+                label_text = " ".join([tag.get_text() for tag in soup.find_all("label")])
+                class_text = " ".join([" ".join(tag["class"]) for tag in soup.find_all(class_=True) if tag.get("class")])
+                combined = f"{text} {logo_text} {label_text} {class_text}"
+                return url, combined
+        except Exception as e:
+            print(f"[Scraper] Error fetching {url}: {e}")
+            return url, ""
+
+    async def scrape_pages(self, batch_size=10):
+        results = []
+        async with aiohttp.ClientSession() as session:
+            for i in range(0, len(self.urls), batch_size):
+                batch = self.urls[i:i+batch_size]
+                tasks = [self.fetch_page(session, url) for url in batch]
+                responses = await asyncio.gather(*tasks)
+                results.extend(responses)
+                await asyncio.sleep(0.5)
+        return results
+
+    def generate_csv(self, filename):
+        data = asyncio.run(self.scrape_pages())
+        with open(filename, "w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["id", "content", "url"])
+            writer.writerows(data)
+        print(f"[Scraper] CSV generated: {filename}")
+
+# =====================
+# CredentialMDP Class (handles the Markov chain learning)
+# =====================
+
 class CredentialMDP:
-    def __init__(self, order: int = 2, gamma: float = 0.9):
+    def __init__(self, order: int = 4, gamma: float = 0.8):
         self.order = order
         self.gamma = gamma
         self.q_values: Dict[str, Dict[Tuple[str, str], float]] = defaultdict(lambda: defaultdict(float))
         self.state_transitions: Dict[str, Dict[str, Set[str]]] = defaultdict(lambda: defaultdict(set))
         self.used_usernames: Set[str] = set()
-        self.epsilon = 0.1
-        self.learning_rate = 0.1
+
+        self.epsilon = 1.0
+        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.95
+        self.learning_rate = 0.3
+        self.num_credentials_generated = 0
+
         self.initial_states: List[str] = []
 
-    # Calculate the strength of a password
+    def decay_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+            self.epsilon = max(self.epsilon, self.epsilon_min)
+
     def calculate_password_strength(self, password: str) -> float:
         score = 0.0
         if len(password) >= 12:
-            score += 0.3
+            score += 0.25
+        elif len(password) >= 8:
+            score += 0.15
         if re.search(r'[A-Z]', password):
             score += 0.2
         if re.search(r'[0-9]', password):
@@ -150,11 +209,12 @@ class CredentialMDP:
             score += 0.1
         return score
 
-    # Calculate the quality of a username
     def calculate_username_quality(self, username: str) -> float:
         score = 0.0
-        if len(username) >= 6:
+        if len(username) >= 8:
             score += 0.3
+        elif len(username) >= 5:
+            score += 0.2
         if username not in self.used_usernames:
             score += 0.4
         if re.match(r'^[a-z]', username):
@@ -163,20 +223,23 @@ class CredentialMDP:
             score += 0.1
         return score
 
-    # Get the reward for a state-action pair
     def get_reward(self, state: str, action: str, next_char: str) -> float:
-        if 'username' in state:
-            current = state[9:] + next_char
-            return self.calculate_username_quality(current) / len(current)
-        else:
-            current = state[9:] + next_char
+        current = state[9:] + next_char
+        if 'password' in state:
             return self.calculate_password_strength(current) / len(current)
+        else:
+            return self.calculate_username_quality(current) / len(current)
 
-    # Get possible actions for a state
+    def update_learning_rate(self):
+        self.learning_rate = max(0.05, 0.03 * (0.99 ** self.num_credentials_generated))
+
+    def register_credential_generation(self):
+        self.num_credentials_generated += 1
+        self.update_learning_rate()
+
     def get_possible_actions(self, state: str) -> List[str]:
         return list(self.state_transitions[state].keys())
 
-    # Choose an action based on epsilon-greedy strategy
     def choose_action(self, state: str) -> Tuple[str, str]:
         possible_actions = self.get_possible_actions(state)
         if not possible_actions:
@@ -186,7 +249,6 @@ class CredentialMDP:
             action = random.choice(possible_actions)
             next_char = random.choice(list(self.state_transitions[state][action]))
         else:
-            # Choose best action based on Q-values
             action_values = {}
             for act in possible_actions:
                 if self.state_transitions[state][act]:
@@ -202,56 +264,67 @@ class CredentialMDP:
 
         return action, next_char
 
-    # Update Q-value based on the Bellman equation
     def update_q_value(self, state: str, action: str, next_char: str, next_state: str, reward: float):
         next_action_values = []
         for next_action in self.get_possible_actions(next_state):
             for next_next_char in self.state_transitions[next_state][next_action]:
                 next_action_values.append(self.q_values[next_state][(next_action, next_next_char)])
-
         max_next_q = max(next_action_values, default=0)
         current_q = self.q_values[state][(action, next_char)]
         new_q = current_q + self.learning_rate * (reward + self.gamma * max_next_q - current_q)
         self.q_values[state][(action, next_char)] = new_q
 
-# Class for generating credentials using Markov Decision Process
+# ============================
+# CredentialGeneratorMDP Class
+# ============================
+
 class CredentialGeneratorMDP:
-    def __init__(self, csv_path: str, wordlist_path: str):
+    def __init__(
+        self,
+        csv_path: str,
+        wordlist_path: str,
+        username_length: int = 8,
+        password_length: int = 12,
+        use_username_chars: bool = True,
+        use_username_nums: bool = True,
+        use_username_symbols: bool = True,
+        use_password_chars: bool = True,
+        use_password_nums: bool = True,
+        use_password_symbols: bool = True,
+    ):
         try:
             self.web_text = load_web_text(csv_path)
             self.wordlists = load_wordlist(wordlist_path)
         except (FileNotFoundError, ValueError) as e:
             print(f"Error loading input files: {e}")
-            self.web_text = csv_path
-            self.wordlists = wordlist_path
+            self.web_text = ""
+            self.wordlists = []
 
-        self.username_mdp = CredentialMDP(order=2)
-        self.password_mdp = CredentialMDP(order=3)
-        self.min_username_length = 5
-        self.min_password_length = 10
+        self.username_mdp = CredentialMDP(order=3)
+        self.password_mdp = CredentialMDP(order=5)
 
-        self.settings = {
-            "username_length": 8,
-            "password_length": 12,
-            "use_numbers": True,
-            "use_symbols": True,
-            "use_uppercase": True
-        }
+        # Store user preferences
+        self.username_length = username_length
+        self.password_length = password_length
+        self.use_username_chars = use_username_chars
+        self.use_username_nums = use_username_nums
+        self.use_username_symbols = use_username_symbols
+        self.use_password_chars = use_password_chars
+        self.use_password_nums = use_password_nums
+        self.use_password_symbols = use_password_symbols
 
-    # Preprocess text data
     def preprocess_text(self, text: str) -> List[str]:
-        words = re.findall(r'\w+', text.lower())
+        words = re.findall(r'[a-zA-Z0-9!@#$%^&*]+', text.lower())
         return [word for word in words if len(word) >= 4]
 
-    # Build state transitions for username and password generation
     def build_state_transitions(self):
-        if isinstance(self.wordlists, str):
-            wordlist_data = [self.wordlists]
-        else:
-            wordlist_data = self.wordlists
-
-        username_data = set(self.preprocess_text(self.web_text) + wordlist_data)
+        username_data = set(self.preprocess_text(self.web_text) + self.wordlists)
         password_data = set(word for word in username_data if len(word) >= 8)
+        symbols = "!@#$%^&*"
+
+        password_data |= {sym + word for word in password_data for sym in symbols}
+        password_data |= {word + sym for word in password_data for sym in symbols}
+        password_data |= {word[:i] + sym + word[i:] for word in password_data for i in range(1, len(word)) for sym in symbols}
 
         for word in username_data:
             for i in range(len(word) - self.username_mdp.order):
@@ -271,113 +344,75 @@ class CredentialGeneratorMDP:
                 if i == 0:
                     self.password_mdp.initial_states.append(state)
 
-    def update_settings(self, settings: dict):
-        self.settings.update({k: v for k, v in settings.items() if k in self.settings})
-
-    # Generate a username and password pair
-    def generate_credential(self) -> Dict[str, str]:
-        # Generate username
+    def generate_username(self) -> str:
         if not self.username_mdp.initial_states:
             state = f"username_{random.choice(self.wordlists)[:2]}"
         else:
             state = random.choice(self.username_mdp.initial_states)
 
         username = state[9:]
-        while len(username) < self.min_username_length:
-            action, next_char = self.username_mdp.choose_action(state)
-            if not action or not next_char:
-                break
-            username += next_char
-            next_state = f"username_{username[-self.username_mdp.order:]}"
-            reward = self.username_mdp.get_reward(state, action, next_char)
-            self.username_mdp.update_q_value(state, action, next_char, next_state, reward)
-            state = next_state
+        allowed = ""
+        if self.use_username_chars:
+            allowed += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        if self.use_username_nums:
+            allowed += "0123456789"
+        if self.use_username_symbols:
+            allowed += "!@#$%^&*"
 
-        if self.settings["use_numbers"]:
-            username += str(random.randint(1, 99))
+        if not allowed:
+            allowed = "user123"
 
-        if self.settings["use_symbols"]:
-            username += random.choice("_.-")
-        #username = f"{username}{random.randint(1, 999)}"
-        self.username_mdp.used_usernames.add(username)
+        while len(username) < self.username_length:
+            username += random.choice(allowed)
 
-        # Generate password
+        return username
+
+    def generate_password(self) -> str:
         if not self.password_mdp.initial_states:
             state = f"password_{random.choice(self.wordlists)[:3]}"
         else:
             state = random.choice(self.password_mdp.initial_states)
 
         password = state[9:]
-        while len(password) < self.settings["password_length"]:
-            action, next_char = self.password_mdp.choose_action(state)
-            if not action or not next_char:
-                break
-            password += next_char
-            next_state = f"password_{password[-self.password_mdp.order:]}"
-            reward = self.password_mdp.get_reward(state, action, next_char)
-            self.password_mdp.update_q_value(state, action, next_char, next_state, reward)
-            state = next_state
+        allowed = ""
+        if self.use_password_chars:
+            allowed += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        if self.use_password_nums:
+            allowed += "0123456789"
+        if self.use_password_symbols:
+            allowed += "!@#$%^&*"
 
-        if self.settings["use_uppercase"]:
-            password = password.capitalize()
-        if self.settings["use_symbols"]:
-            password += random.choice("!@#$%^&*")
-        if self.settings["use_numbers"]:
-            password += str(random.randint(0, 9))
+        if not allowed:
+            allowed = "pass1234"
 
-        #password = self.enhance_password(password)
-        return username, password
+        while len(password) < self.password_length:
+            password += random.choice(allowed)
 
-    # Enhance the generated password
+        password = self.enhance_password(password)
+        return password
+
     def enhance_password(self, password: str) -> str:
-        enhanced = password.capitalize()
-        enhanced = f"{enhanced}{random.choice('!@#$%^&*')}{random.randint(0, 9)}"
-        return enhanced
+        symbols = "!@#$%^&*"
+        words = re.findall(r'\b[a-zA-Z]{4,}\b', password)
 
-    # Generate multiple credentials
-    def generate_credentials(self, count: int = 50) -> Dict[str, str]:
+        if self.use_password_symbols and not any(c in symbols for c in password):
+            insert_pos = len(password) // 2
+            password = password[:insert_pos] + random.choice(symbols) + password[insert_pos:]
+
+        if self.use_password_nums and not any(c.isdigit() for c in password):
+            insert_pos = len(password) - 1
+            password = password[:insert_pos] + str(random.randint(0, 9)) + password[insert_pos:]
+
+        if password and not password[0].isupper():
+            password = password[0].upper() + password[1:]
+        return password
+
+    def generate_credentials(self, count: int = 10):
         self.build_state_transitions()
         credentials = {}
         for _ in range(count):
-            username, password = self.generate_credential()
+            username, password = self.generate_credentials()
             credentials[username] = password
         return credentials
-
-# Main function to run the credential generation process
-def main():
-    # File paths
-    site_list_csv_path = "site_list.csv"
-    csv_path = "web_text.csv"
-    wordlist_path = "wordlist.txt"
-    credentials_csv_path = "storage/generated_credentials.csv"
-
-    # Load URLs from the CSV file
-    urls = load_urls_from_csv(site_list_csv_path)
-
-    scraper = WebScraper(urls)
-    scraper.generate_csv(csv_path)
-
-    
-
-    #Use NLP routine to clean CSV file
-    nlp_subroutine(csv_path)
-    
-    try:
-        generator = CredentialGeneratorMDP(csv_path, wordlist_path)
-        credentials = generator.generate_credentials(15)
-
-        wordlist_manager = AIWordlist(credentials_csv_path)
-        wordlist_manager.save_credentials_to_csv(credentials)
-        wordlist_manager.display_credentials(credentials)
-
-        #print("\nGenerated Credentials:")
-        #for username, password in credentials:
-        #    print(f"Username: {username}, Password: {password}")
-    except Exception as e:
-        print(f"Error generating credentials: {e}")
-
-if __name__ == "__main__":
-    main()
-
 
 
