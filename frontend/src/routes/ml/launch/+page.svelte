@@ -1,15 +1,10 @@
 <script>
-    import { goto } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import Slider from "$lib/components/Slider.svelte";
-  import Button from "$lib/components/Button.svelte"; // Maybe Remove
   import FileUploader from "$lib/components/FileUploader.svelte";
 
-  
-
-  let useWordlist = false;
-  let wordlistPath = '';
   let uploadedFiles = [];
-
+  let numToGenerate = 10;
 
   let usernameOptions = {
     characters: true,
@@ -17,6 +12,7 @@
     symbols: false,
     length: 12
   };
+
   let passwordOptions = {
     characters: true,
     numbers: false,
@@ -24,83 +20,72 @@
     length: 12
   };
 
-  let generatedCredentials = [];
+  let isLoading = false;
 
-  function handleUpload() {
-    const file = event.target.files[0];
-    if (file) {
-      wordlistPath = file.name; 
-      console.log("Selected file:", file);
+  function handleWordlist(files) {
+    uploadedFiles = files;
+    console.log("Uploaded wordlist files:", uploadedFiles);
+  }
+
+  async function startGenerator() {
+    isLoading = true;
+
+    const formData = new FormData();
+
+    // Validation: Make sure inputs are correct
+    if (!usernameOptions.characters || !passwordOptions.characters) {
+      alert("Username and Password must have 'characters' enabled.");
+      return;
+    }
+    if (!Number.isInteger(usernameOptions.length) || usernameOptions.length <= 0 || usernameOptions.length > 16) {
+      alert("Username length must be between 1 and 16.");
+      return;
+    }
+    if (!Number.isInteger(passwordOptions.length) || passwordOptions.length <= 0 || passwordOptions.length > 16) {
+      alert("Password length must be between 1 and 16.");
+      return;
+    }
+
+    // Append options
+    formData.append("username_length", usernameOptions.length.toString());
+    formData.append("password_length", passwordOptions.length.toString());
+    formData.append("use_username_chars", usernameOptions.characters.toString());
+    formData.append("use_username_nums", usernameOptions.numbers.toString());
+    formData.append("use_username_symbols", usernameOptions.symbols.toString());
+    formData.append("use_password_chars", passwordOptions.characters.toString());
+    formData.append("use_password_nums", passwordOptions.numbers.toString());
+    formData.append("use_password_symbols", passwordOptions.symbols.toString());
+    formData.append("num_to_generate", numToGenerate.toString());
+
+    // Attach the uploaded wordlist file
+    for (let file of uploadedFiles) {
+      formData.append("files", file);
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/ml/generate", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Failed to generate credentials.");
+
+      const data = await res.json();
+
+      goto("/ml/results", {
+        state: {
+          credentials: data.credentials,
+          runtime: data.runtime_seconds
+        }
+      });
+
+    } catch (err) {
+      console.error("Generation error:", err);
+      alert("Failed to generate credentials.");
+    } finally {
+      isLoading = false;
     }
   }
-
-  function logPayloadAndTestRequest() {
-  console.log("📦 Payload being sent:", {
-    wordlistPath,
-    usernameOptions,
-    passwordOptions
-  });
-}
-  
-function handleWordlist(files) {
-  // Array of File objects
-  uploadedFiles = files; 
-  console.log("Uploaded files:", uploadedFiles);
-}
-
-async function handleGenerate() {
-  const formData = new FormData();
-
-  // [SRS 35.1 Optimized Aspects] The system shall validate user input 
-  if (!usernameOptions.characters || !passwordOptions.characters) {
-    alert("Username and password options must have 'characters' enabled.");
-    return;
-  }
-
-  // [SRS 35.1 Optimized Aspects] Validate that length values are positive integers and within reasonable range
-  if (!Number.isInteger(usernameOptions.length) || usernameOptions.length <= 0 || usernameOptions.length > 16) {
-    alert("Username length must be a positive integer between 1 and 16.");
-    return;
-  }
-  if (!Number.isInteger(passwordOptions.length) || passwordOptions.length <= 0 || passwordOptions.length > 16) {
-    alert("Password length must be a positive integer between 1 and 16.");
-    return;
-  }
-
-  formData.append("usernameOptions", JSON.stringify(usernameOptions));
-  formData.append("passwordOptions", JSON.stringify(passwordOptions));
-
-  for (let file of uploadedFiles) {
-    formData.append("files", file);
-  }
-
-  try {
-    const start = performance.now();
-    const res = await fetch("http://localhost:8000/api/ml/generate", {
-      method: "POST",
-      body: formData
-    });
-
-    if (!res.ok) throw new Error("Failed to generate credentials");
-
-    const data = await res.json();
-    const end = performance.now();
-
-    const runtime = ((end - start) / 1000).toFixed(3); // seconds
-
-    goto("/ml/results", {
-      state: {
-        credentials: data.credentials,
-        runtime
-      }
-    });
-
-  } catch (err) {
-    console.error("Generation error:", err);
-    alert("Failed to generate credentials.");
-  }
-}
-
 </script>
 
 <style>
@@ -213,6 +198,10 @@ async function handleGenerate() {
     </div>
   </div>
 
+  <label>Number of Credentials to Generate</label>
+  <input type="number" min="1" bind:value={numToGenerate} placeholder="e.g., 10" />
+
   <!-- [SRS 35.7] Generate button placed bottom-left -->
-  <button class="app-button" on:click={handleGenerate}>Generate</button>
+  <button class="app-button" on:click={startGenerator}>Generate</button>
 </div>
+
