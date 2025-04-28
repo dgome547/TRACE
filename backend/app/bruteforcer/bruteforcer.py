@@ -369,6 +369,8 @@ class BruteForcer:
                 logger.info(f"[{result.status_code}] {url} - Length: {result.content_length}")
                 if websocket:
                     await websocket.send_json({"type": "result", "data": result.to_dict()})
+                else:
+                    print(f"[Result] {result.status_code} {url} | Length: {result.content_length} | Time: {result.response_time:.3f}s")
             else:
                 self.stats.filtered_requests += 1
         else:
@@ -378,9 +380,13 @@ class BruteForcer:
             logger.warning(f"[Error] {url} - {result.error}")
             if websocket:
                 await websocket.send_json({"type": "result", "data": result.to_dict()})
+            else:
+                print(f"[Error] {url} - {result.error}")
 
         if websocket:
             await websocket.send_json({"type": "stats", "data": self.stats.to_dict(), "progress": self.progress})
+        else:
+            print(f"[Stats] Progress: {self.progress:.2f}% | Processed: {self.stats.processed_requests} | Filtered: {self.stats.filtered_requests} | Req/sec: {self.stats.requests_per_second:.2f}")
 
         # Introduce a delay based on the rate limit
         await asyncio.sleep(0) # Allow other tasks to run
