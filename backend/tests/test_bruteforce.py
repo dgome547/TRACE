@@ -18,7 +18,7 @@ async def test_run_live_bruteforce():
 
     brute_forcer = BruteForcer()
     target_url = "http://testphp.vulnweb.com/"
-    wordlist_file = "backend/tests/wordlist.txt"
+    wordlist_file = "WRD.txt"
     output_csv = "live_test_results.csv"
 
     # Create a small test wordlist if it doesn't exist
@@ -30,7 +30,7 @@ async def test_run_live_bruteforce():
             f.write("dashboard\n")
             f.write("robots.txt\n")
 
-    wordlist = load_wordlist(wordlist_file)[:10]
+    wordlist = load_wordlist(wordlist_file)
     assert len(wordlist) > 0, "Wordlist failed to load or is empty."
 
     config = {
@@ -45,7 +45,7 @@ async def test_run_live_bruteforce():
 
     scan_output = await brute_forcer.start_scan(config)
     print("Scan Results:")
-    print(json.dumps(scan_output["results"], indent=2))
+    #print(json.dumps(scan_output["results"], indent=2))
 
 
 
@@ -55,10 +55,10 @@ async def test_run_live_bruteforce():
 
     if scan_output["results"]:
         # Ensure tester folder exists
-        output_folder = "backend/tests/tester"
-        os.makedirs(output_folder, exist_ok=True)  # Create the 'tester' folder if it doesn't exist
+        output_folder = "results"
+        os.makedirs(output_folder, exist_ok=True)  # Create the 'results' folder if it doesn't exist
 
-        # Set the full path for the CSV file in the tester folder
+        # Set the full path for the CSV file in the results folder
         output_csv_path = os.path.join(output_folder, output_csv)
 
         # Export to CSV if we found anything
