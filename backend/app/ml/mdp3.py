@@ -369,7 +369,10 @@ class CredentialGeneratorMDP:
 
     def generate_password(self) -> str:
         if not self.password_mdp.initial_states:
-            state = f"password_{random.choice(self.wordlists)[:3]}"
+            if self.wordlists:
+                state = f"password_{random.choice(self.wordlists)[:3]}"
+            else:
+                state = "password_pa"
         else:
             state = random.choice(self.password_mdp.initial_states)
 
@@ -411,7 +414,8 @@ class CredentialGeneratorMDP:
         self.build_state_transitions()
         credentials = {}
         for _ in range(count):
-            username, password = self.generate_credentials()
+            username = self.generate_username() if self.wordlists else "user"
+            password = self.generate_password()
             credentials[username] = password
         return credentials
 

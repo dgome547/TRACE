@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form
-from typing import List
+from typing import List, Optional
 import os
 import shutil
 import time
@@ -21,7 +21,7 @@ async def generate_credentials(
     use_password_nums: bool = Form(...),
     use_password_symbols: bool = Form(...),
     num_to_generate: int = Form(...),
-    files: List[UploadFile] = File(...)
+    files: Optional[List[UploadFile]] = File(None)
 ):
     # Save uploaded file
     wordlist_folder = "storage/uploads"
@@ -29,11 +29,12 @@ async def generate_credentials(
     os.makedirs("storage", exist_ok=True)
 
     wordlist_path = ""
-    for file in files:
-        file_location = os.path.join(wordlist_folder, file.filename)
-        with open(file_location, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-        wordlist_path = file_location
+    if files:
+        for file in files:
+            file_location = os.path.join(wordlist_folder, file.filename)
+            with open(file_location, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+            wordlist_path = file_location
 
     web_text_csv_path = "storage/web_text.csv"
     if not os.path.exists(web_text_csv_path):
@@ -62,5 +63,3 @@ async def generate_credentials(
         "runtime_seconds": round(end - start, 3),
     }
     return response
-
-

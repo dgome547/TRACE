@@ -15,8 +15,12 @@ $: {
 }
 
 // Compute counts
-let usernamesGenerated = credentials.length;
-let passwordsGenerated = credentials.filter(c => c.password).length;
+let usernamesGenerated = 0;
+let passwordsGenerated = 0;
+
+// Recompute counts reactively
+$: usernamesGenerated = credentials.length;
+$: passwordsGenerated = credentials.filter(c => c.password && c.password.length > 0).length;
 
 // Navigation function
 function reGenerate() {

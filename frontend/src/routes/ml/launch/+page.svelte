@@ -49,12 +49,12 @@
     // Append options
     formData.append("username_length", usernameOptions.length.toString());
     formData.append("password_length", passwordOptions.length.toString());
-    formData.append("use_username_chars", usernameOptions.characters.toString());
-    formData.append("use_username_nums", usernameOptions.numbers.toString());
-    formData.append("use_username_symbols", usernameOptions.symbols.toString());
-    formData.append("use_password_chars", passwordOptions.characters.toString());
-    formData.append("use_password_nums", passwordOptions.numbers.toString());
-    formData.append("use_password_symbols", passwordOptions.symbols.toString());
+    formData.append("use_username_chars", usernameOptions.characters ? "True" : "False");
+    formData.append("use_username_nums", usernameOptions.numbers ? "True" : "False");
+    formData.append("use_username_symbols", usernameOptions.symbols ? "True" : "False");
+    formData.append("use_password_chars", passwordOptions.characters ? "True" : "False");
+    formData.append("use_password_nums", passwordOptions.numbers ? "True" : "False");
+    formData.append("use_password_symbols", passwordOptions.symbols ? "True" : "False");
     formData.append("num_to_generate", numToGenerate.toString());
 
     // Attach the uploaded wordlist file
@@ -62,8 +62,13 @@
       formData.append("files", file);
     }
 
+    console.log("Sending formData:");
+    for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+    }
+
     try {
-      const res = await fetch("http://localhost:5000/api/ml/generate", {
+      const res = await fetch("http://localhost:8000/api/ml/generate", {
         method: "POST",
         body: formData
       });
@@ -204,4 +209,3 @@
   <!-- [SRS 35.7] Generate button placed bottom-left -->
   <button class="app-button" on:click={startGenerator}>Generate</button>
 </div>
-
