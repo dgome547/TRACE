@@ -7,9 +7,14 @@ from datetime import datetime
 # Make sure the modules are in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import setup_logging, validate_config
-from crawler import run_crawler, Crawler
-from httphandler import HttpHandler
+from app.crawler.utils import setup_logging, validate_config
+from app.crawler.crawler import run_crawler, Crawler
+from app.crawler.httphandler import HttpHandler
+
+def get_test_output_path(filename):
+    """Helper to get output path in the tests directory."""
+    import os
+    return os.path.join(os.path.dirname(__file__), filename)
 
 
 class MockWebSocket:
@@ -36,13 +41,17 @@ async def test_crawler_config():
     # Valid configuration
     valid_config = {
         "targetUrl": "https://example.com",
-        "crawlDepth": 2,
+        "crawlDepth": 5,
         "limitPages": 10,
         "requestDelay": 1.0,
+        "userAgent": "TestAgent/1.0",
+        "proxy": "http://127.0.0.1:8080",
+        "outputFile": get_test_output_path(f"test_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
     }
 
     is_valid, errors = validate_config(valid_config)
     print(f"Valid config test passed: {is_valid}")
+    assert is_valid, f"Expected valid config to pass, but got errors: {errors}"
 
     # Invalid configuration (missing target URL)
     invalid_config = {
@@ -69,13 +78,15 @@ async def test_crawler_run():
     """Test running the crawler with example website"""
     print("\n=== Testing Crawler Run ===")
 
-    # Configuration for a small test
+    # Configuration for a small test with userAgent and proxy
     config = {
         "targetUrl": "https://example.com",
         "crawlDepth": 2,
         "limitPages": 10,
         "requestDelay": 1.0,
-        "outputFile": f"test_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        "userAgent": "TestAgent/1.0",
+        "proxy": "http://127.0.0.1:8080",
+        "outputFile": get_test_output_path(f"test_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
     }
 
     # Create a mock websocket
@@ -123,7 +134,7 @@ async def test_crawler_pause_resume():
 
 async def main():
     """Run all tests"""
-    setup_logging()
+    setup_logging(log_file=get_test_output_path("test_crawler.log"))
 
     print("=== Starting Crawler Tests ===")
 
