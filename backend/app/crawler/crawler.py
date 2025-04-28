@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import json
 
-from app.bruteforcer.httphandler import HttpHandler
+from app.crawler.httphandler import HttpHandler
 from app.crawler.utils import valid_url, validate_config
 
 
@@ -303,14 +303,12 @@ async def run_crawler(config: Dict[str, Any], websocket=None) -> Dict[str, Any]:
     crawler = Crawler(output_file=config.get("outputFile", "crawl_results.csv"))
     crawler.reset_state()
 
-    # Set up HttpHandler with rate limiting from config
-    http_handler = HttpHandler(rate_limit=float(config.get("requestDelay", 1.0)))
-
-    # Set user agent if provided
-    if config.get("userAgent"):
-        http_handler.user_agent = config["userAgent"]
-
-    # Handle proxy if provided
+    # Prepare HttpHandler with rate limiting, user agent, and proxy
+    http_handler = HttpHandler(
+        rate_limit=float(config.get("requestDelay", 1.0)),
+        user_agent=config.get("userAgent", 'TRACE-Crawler/1.0'),
+        proxy=config.get("proxy")
+    )
     if config.get("proxy"):
         http_handler.proxy = config["proxy"]
 

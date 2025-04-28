@@ -78,7 +78,7 @@ def validate_config(config: Dict[str, Any]) -> Tuple[bool, list]:
 
     # SRS-29.5: Require positive values
     numeric_fields = [
-        ("crawlDepth", "Crawl Depth"),
+        ("depth_limit", "Depth Limit"),
         ("limitPages", "Limit on Number of Pages"),
         ("requestDelay", "Request Delay")
     ]
@@ -93,16 +93,22 @@ def validate_config(config: Dict[str, Any]) -> Tuple[bool, list]:
                 if config[field_name]:  # Only add error if field has a non-empty value
                     errors.append(f"{field_label} must be a valid number")
 
+    # Validate optional userAgent and proxy fields
+    if "userAgent" in config and not isinstance(config["userAgent"], str):
+        errors.append("User Agent must be a string")
+    if "proxy" in config and config["proxy"] and not isinstance(config["proxy"], str):
+        errors.append("Proxy must be a string or None")
+
     return (len(errors) == 0, errors)
 
 
-def setup_logging():
+def setup_logging(log_file='crawler.log'):
     """Configure logging for crawler operations"""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler('crawler.log'),
+            logging.FileHandler(log_file),
             logging.StreamHandler()
         ]
     )

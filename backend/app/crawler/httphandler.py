@@ -5,17 +5,19 @@ from typing import Optional
 
 
 class HttpHandler:
-    def __init__(self, rate_limit: float = 1.0):
+    def __init__(self, rate_limit: float = 1.0, user_agent: str = 'TRACE-Crawler/1.0', proxy: str = None):
         """
-        HTTP Handler for web requests with rate limiting
+        HTTP Handler for web requests with rate limiting, custom user agent, and proxy support.
 
         Args:
             rate_limit (float): Minimum time between requests in seconds
+            user_agent (str): User-Agent string to use for requests
+            proxy (str): Proxy URL to use for requests (e.g., 'http://proxy:port')
         """
         self.rate_limit = rate_limit
         self.last_request_time = 0
-        self.user_agent = 'TRACE-Crawler/1.0'
-        self.proxy = None
+        self.user_agent = user_agent
+        self.proxy = proxy
 
     async def fetch(self, url: str, timeout: float) -> Optional[requests.Response]:
         """
