@@ -6,7 +6,7 @@ import re
 import json
 import csv
 import sys
-import os
+
 
 # Add the backend directory to the system path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../backend/app')))
@@ -357,8 +357,7 @@ class BruteForcer:
             result.line_count = response.text.count('\n')
             result.char_count = len(response.text)
 
-            if result.status_code >= 400 and result.status_code < 500:
-                # Reset content-related fields for client error responses
+            if 400 <= result.status_code < 500:
                 result.content_length = 0
                 result.word_count = 0
                 result.line_count = 0
@@ -367,29 +366,39 @@ class BruteForcer:
             if apply_filters(result.to_dict(), self.config.hide_status, self.config.show_only_status, self.config.filter_by_content_length):
                 self.results.append(result)
                 logger.info(f"[{result.status_code}] {url} - Length: {result.content_length}")
+
+                # Always print to terminal
+                print(f"[Result] {result.status_code} {url} | Length: {result.content_length} | Time: {result.response_time:.3f}s")
+
                 if websocket:
                     await websocket.send_json({"type": "result", "data": result.to_dict()})
-                else:
-                    print(f"[Result] {result.status_code} {url} | Length: {result.content_length} | Time: {result.response_time:.3f}s")
             else:
                 self.stats.filtered_requests += 1
         else:
             result.error = "Request failed or timed out"
             result.response_time = end_time - start_time
-            self.results.append(result)  # Append even on error
+            self.results.append(result)
             logger.warning(f"[Error] {url} - {result.error}")
+
+            # Always print to terminal
+            print(f"[Error] {url} - {result.error}")
+
             if websocket:
                 await websocket.send_json({"type": "result", "data": result.to_dict()})
-            else:
-                print(f"[Error] {url} - {result.error}")
+
+        # Always print stats
+        print(f"[Stats] Progress: {self.progress:.2f}% | Processed: {self.stats.processed_requests} | "
+            f"Filtered: {self.stats.filtered_requests} | Req/sec: {self.stats.requests_per_second:.2f}")
 
         if websocket:
-            await websocket.send_json({"type": "stats", "data": self.stats.to_dict(), "progress": self.progress})
-        else:
-            print(f"[Stats] Progress: {self.progress:.2f}% | Processed: {self.stats.processed_requests} | Filtered: {self.stats.filtered_requests} | Req/sec: {self.stats.requests_per_second:.2f}")
+            await websocket.send_json({
+                "type": "stats",
+                "data": self.stats.to_dict(),
+                "progress": self.progress
+            })
 
-        # Introduce a delay based on the rate limit
-        await asyncio.sleep(0) # Allow other tasks to run
+        # Allow other tasks to run
+        await asyncio.sleep(0)
 
     async def stop_scan(self, confirm: bool = False) -> Dict[str, str]:
         """Stop the brute force scan."""
