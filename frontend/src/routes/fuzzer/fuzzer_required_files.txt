@@ -1,0 +1,10 @@
+#  required files
+src/routes/fuzzer/config/+page.svelte
+src/routes/fuzzer/results/+page.svelte
+src/routes/fuzzer/fuzzer.css
+src/lib/stores/fuzzerConfigStore.js
+src/lib/stores/fuzzerResultStore.js
+backend/app/routes/fuzzer_routes.py
+backend/app/routes/routes.py
+backend/app/fuzzer/fuzzer.py
+backend/app/fuzzer/httphandler.py

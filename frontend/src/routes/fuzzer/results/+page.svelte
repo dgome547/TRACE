@@ -254,9 +254,11 @@
     </div>
   
     <div class="navigation">
-      <div class="nav-item" on:click={() => goto('/fuzzer/config')}>Configuration</div>
-      <div class="nav-item" class:active={scanInProgress}>Running</div>
-      <div class="nav-item" class:active={!scanInProgress}>Results</div>
+      <div class="nav-item" role="button" tabindex="0" aria-label="Go to Configuration" on:click={() => goto('/fuzzer/config')} on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { goto('/fuzzer/config'); } }}>
+        Configuration
+      </div>
+      <div class="nav-item" class:active={scanInProgress} aria-current={scanInProgress ? 'page' : undefined}>Running</div>
+      <div class="nav-item" class:active={!scanInProgress} aria-current={!scanInProgress ? 'page' : undefined}>Results</div>
     </div>
   
     {#if scanInProgress}

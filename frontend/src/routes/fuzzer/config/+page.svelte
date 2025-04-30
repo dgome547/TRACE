@@ -3,6 +3,7 @@
     import { onMount } from 'svelte';
     import { get } from 'svelte/store';
     import { fuzzerConfigStore } from '$lib/stores/fuzzerConfigStore'; // Store for fuzzer config
+    import '../fuzzer.css';
   
     // Form data
     let targetURL = '';
@@ -93,6 +94,23 @@
     <div class="main-content">
       <div class="header">
         <h1>Parameter Fuzzer</h1>
+      </div>
+  
+      <div class="navigation">
+        <div class="nav-item active" role="button" tabindex="0" aria-label="Go to Configuration" aria-current="page"
+          on:click={() => goto('/fuzzer/config')}
+          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { goto('/fuzzer/config'); } }}>
+          Configuration
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="Go to Running"
+          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { goto('#'); } }}>
+          Running
+        </div>
+        <div class="nav-item" role="button" tabindex="0" aria-label="Go to Results"
+          on:click={() => goto('/fuzzer/results')}
+          on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { goto('/fuzzer/results'); } }}>
+          Results
+        </div>
       </div>
   
       <div class="content">
