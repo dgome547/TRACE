@@ -336,9 +336,11 @@
     {:else if !configData}
       <div class="empty-state">
         No configuration data available. Please go back to the configuration page.
-        <button class="restart-button" on:click={handleRestart}>
-          Go to Configuration
-        </button>
+        <div class="centered-btn-wrapper">
+          <button class="restart-button" on:click={handleRestart}>
+            Go to Configuration
+          </button>
+        </div>
       </div>
     {:else}
       <div class="empty-state">

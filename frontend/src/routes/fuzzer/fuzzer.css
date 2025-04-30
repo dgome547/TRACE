@@ -425,3 +425,13 @@
       width: 100%;
     }
   }
+  
+  .centered-btn-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  
+  .centered-btn-wrapper .restart-button {
+    margin-top: 0;
+  }
