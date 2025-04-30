@@ -21,16 +21,59 @@
     requestsPerSec: stats.requests_per_second?.toFixed(3) || "0.000"
   };
 
-  // Format request details for the table
-  $: requestDetails = results.map(result => ({
-    id: result.id,
-    response: result.status_code,
-    lines: `${result.line_count} L`,
-    word: `${result.word_count} W`,
-    chars: result.char_count,
-    payload: result.payload,
-    response_time: result.response_time?.toFixed(3) || "0.000"
-  }));
+  // Sorting functionality
+  let sortField = 'id'; // Default sort field
+  let sortDirection = 'asc'; // Default sort direction (ascending)
+
+  // Handle column header click for sorting
+  function handleSort(field) {
+    if (sortField === field) {
+      // If already sorting by this field, toggle direction
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // New field, set to ascending by default
+      sortField = field;
+      sortDirection = 'asc';
+    }
+  }
+
+  // Format and sort request details for the table
+  $: requestDetails = [...results]
+    .map(result => ({
+      id: result.id,
+      response: result.status_code,
+      lines: result.line_count,
+      linesDisplay: `${result.line_count} L`,
+      word: result.word_count,
+      wordDisplay: `${result.word_count} W`,
+      chars: result.char_count,
+      payload: result.payload,
+      response_time: result.response_time || 0,
+      response_time_display: result.response_time?.toFixed(3) || "0.000"
+    }))
+    .sort((a, b) => {
+      let valueA = a[sortField];
+      let valueB = b[sortField];
+      
+      // Handle numeric comparison
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return sortDirection === 'asc' 
+          ? valueA - valueB 
+          : valueB - valueA;
+      }
+      
+      // Handle string comparison
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return sortDirection === 'asc'
+          ? valueA.localeCompare(valueB)
+          : valueB.localeCompare(valueA);
+      }
+      
+      // Fallback for mixed types
+      return sortDirection === 'asc'
+        ? String(valueA).localeCompare(String(valueB))
+        : String(valueB).localeCompare(String(valueA));
+    });
   
   // Show terminal toggle functionality
   let showTerminal = false;
@@ -132,13 +175,27 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Response</th>
-          <th>Lines</th>
-          <th>Word</th>
-          <th>Chars</th>
-          <th>Payload</th>
-          <th>Response Time</th>
+          <th on:click={() => handleSort('id')} class={sortField === 'id' ? `sorted-${sortDirection}` : ''}>
+            ID {sortField === 'id' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('response')} class={sortField === 'response' ? `sorted-${sortDirection}` : ''}>
+            Response {sortField === 'response' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('lines')} class={sortField === 'lines' ? `sorted-${sortDirection}` : ''}>
+            Lines {sortField === 'lines' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('word')} class={sortField === 'word' ? `sorted-${sortDirection}` : ''}>
+            Word {sortField === 'word' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('chars')} class={sortField === 'chars' ? `sorted-${sortDirection}` : ''}>
+            Chars {sortField === 'chars' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('payload')} class={sortField === 'payload' ? `sorted-${sortDirection}` : ''}>
+            Payload {sortField === 'payload' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
+          <th on:click={() => handleSort('response_time')} class={sortField === 'response_time' ? `sorted-${sortDirection}` : ''}>
+            Response Time {sortField === 'response_time' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -146,11 +203,11 @@
           <tr>
             <td>{detail.id}</td>
             <td class={`response-${detail.response}`}>{detail.response}</td>
-            <td>{detail.lines}</td>
-            <td>{detail.word}</td>
+            <td>{detail.linesDisplay}</td>
+            <td>{detail.wordDisplay}</td>
             <td>{detail.chars}</td>
             <td>{detail.payload}</td>
-            <td>{detail.response_time}</td>
+            <td>{detail.response_time_display}</td>
           </tr>
         {/each}
       </tbody>
@@ -190,3 +247,20 @@
     </div>
   {/if}
 </div>
+
+<style>
+  /* Add these styles to your results.css file or include them here */
+  th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  
+  th:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .sorted-asc, .sorted-desc {
+    font-weight: bold;
+  }
+</style>

@@ -1,0 +1,10 @@
+admin
+login
+test
+images
+css
+js
+index.php
+robots.txt
+sitemap.xml
+search
