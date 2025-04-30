@@ -1,23 +1,33 @@
 <script>
 	import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
+  import { onMount } from 'svelte';
   
-    let results = [];
   
+  
+  let results = [];
+
     // Placeholder values – Logic not implemented in backend
-    let runtime = 12.5;
+    let runtime = 0;
     let processedRequests = 0;    
-    let filteredRequests = 30;
+    let filteredRequests = 0;
     let requestsPerSec = (processedRequests / runtime).toFixed(2);
   
     onMount(async () => {
       try {
-        const res = await fetch('http://127.0.0.1:5000/api/crawler/results');
+        const res = await fetch('http://127.0.0.1:8000/api/crawler/results');
+        const metricsRes = await fetch('http://127.0.0.1:8000/api/crawler/metrics');
+
+        if (metricsRes.ok) {
+          const metricsData = await metricsRes.json();
+          runtime = metricsData.running_time ?? 0;
+          processedRequests = metricsData.processed_requests ?? 0;
+          filteredRequests = metricsData.filtered_requests ?? 0;
+          requestsPerSec = metricsData.requests_per_second?.toFixed(2) ?? "0.00";
+        }
+
         if (res.ok) {
           const data = await res.json();
           results = data;
-          processedRequests = data.length;
-          requestsPerSec = (processedRequests / runtime).toFixed(2);
         } else {
           console.error("Failed to fetch CSV results");
         }
@@ -27,11 +37,34 @@
     });
   
     function restartCrawl() {
-      goto("/crawler/launch") 
+      goto("/tools/crawler/") 
     }
   
     function exportResults() {
-      alert("Export to CSV coming soon");
+      if (results.length === 0) {
+        alert("No results to export.");
+        return;
+      }
+
+      // Build CSV content
+      let csvContent = "data:text/csv;charset=utf-8," 
+          + "ID,URL,Title,WordCount,CharCount,LinksFound,Error\n"
+          + results.map(r => 
+              `${r.id ?? ''},${r.URL ?? ''},${r.Title ?? ''},${r.WordCount ?? 0},${r.CharCount ?? 0},${r.LinksFound ?? 0},${r.Error ?? ''}`
+            ).join("\n");
+
+      // Create download link
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "crawl_results.csv");
+      document.body.appendChild(link);
+
+      // Auto-click the link to trigger download
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
     }
   </script>
   
@@ -62,14 +95,27 @@
       font-size: 20px;
     }
   
+    .table-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 0 20px;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: min(50vh, 500px);
+    }
+
     table {
       width: 100%;
+      max-width: 1200px;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin: 0 auto;
+      border-radius: 10px;
+      overflow: hidden;
+      border: none;
     }
   
     th, td {
-      border: 1px solid #ccc;
+      border: none;
       padding: 8px;
       text-align: left;
     }
@@ -98,10 +144,27 @@
       cursor: pointer;
       background-color: #9BC2CB;
     }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background-color: #9BC2CB;
+      z-index: 2;
+      border: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #0000001c;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: white;
+    }
   </style>
   
   <div class="main">
     <h2>Crawler</h2>
+    <p style="margin: 0 0 20px 0; font-size: 14px;">Results</p>
   
     <div class="status-metrics">
       <div class="status-box">
@@ -122,24 +185,34 @@
       </div>
     </div>
   
-    <table>
+    <div class="table-wrapper">
+      <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>ID</th>
             <th>URL</th>
-            <th>Depth</th>
+            <th>Title</th>
+            <th>Word Count</th>
+            <th>Character Count</th>
+            <th>Links Found</th>
+            <th>Error </th>
           </tr>
         </thead>
         <tbody>
           {#each results as row, i}
             <tr>
-              <td>{i + 1}</td>
-              <td>{row.URL}</td>
-              <td>{row.Depth}</td>
+              <td>{row.id ?? ''}</td>
+              <td>{row.URL ?? ''}</td>
+              <td>{row.Title ?? ''}</td>
+              <td>{row.WordCount ?? 0}</td>
+              <td>{row.CharCount ?? 0}</td>
+              <td>{row.LinksFound ?? 0}</td>
+              <td>{row.Error ? row.Error : 'False'}</td>
             </tr>
           {/each}
         </tbody>
       </table>
+    </div>
   
     <div class="button-container">
       <div>
