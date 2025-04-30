@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "id": 46,
+      "status_code": 200,
+      "lines": 7,
+      "words": 13,
+      "chars": 60,
+      "payload": "admin",
+      "response_time": 0.22638916969299316,
+      "error": "false"
+    },
+    {
+      "id": 170,
+      "status_code": 200,
+      "lines": 8,
+      "words": 19,
+      "chars": 89,
+      "payload": "images",
+      "response_time": 0.21914386749267578,
+      "error": "false"
+    }
+  ],
+  "metrics": {
+    "running_time": "0m 27s",
+    "processed_requests": 171,
+    "filtered_requests": 169,
+    "requests_per_sec": 6.28
+  },
+  "timestamp": "2025-04-30T11:22:31.709086"
+}
