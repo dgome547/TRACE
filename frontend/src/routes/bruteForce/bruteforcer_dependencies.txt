@@ -1,0 +1,9 @@
+TRACE/frontend/src/routes/bruteForce/+page.svelte - Main bruteforce interface
+TRACE/frontend/package.json - Frontend dependencies
+TRACE/frontend/package-lock.json - Frontend dependency lock file
+TRACE/frontend/src/routes/+layout.svelte - Layout component that might contain shared UI elements
+Backend Files:
+TRACE/backend/app/bruteforcer/bruteforcer.py - Main bruteforcer implementation
+TRACE/backend/app/bruteforcer/utils.py - Utility functions for bruteforcing
+TRACE/backend/app/bruteforcer/httphandler.py - HTTP handling for bruteforce requests
+TRACE/backend/app/bruteforcer/wordlist.txt - Default wordlist for bruteforcing

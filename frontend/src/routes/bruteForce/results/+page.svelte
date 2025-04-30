@@ -476,4 +476,4 @@
   .status-error {
     background-color: #FF3B30;
   }
-</style>
+</style> 
