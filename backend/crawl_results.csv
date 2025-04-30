@@ -1,3 +1,12 @@
-URL,Depth
-https://www.example.com,0
-https://www.iana.org/domains/example,1
+ID,URL,Title,WordCount,CharCount,LinksFound,Error,Timestamp
+1,https://example.com,Example Domain,30,220,1,,2025-04-29T21:51:24.418920
+2,https://www.iana.org/domains/example,Example Domains,181,1321,28,,2025-04-29T21:51:24.693051
+3,https://www.iana.org/,Internet Assigned Numbers Authority,179,1408,34,,2025-04-29T21:51:25.927204
+4,https://www.iana.org/domains,Domain Name Services,377,2618,54,,2025-04-29T21:51:26.738624
+5,https://www.iana.org/protocols,Protocol Registries,41116,294245,6058,,2025-04-29T21:51:31.765332
+6,https://www.iana.org/numbers,Number Resources,606,4331,80,,2025-04-29T21:51:32.887026
+7,https://www.iana.org/about,About us,479,3355,37,,2025-04-29T21:51:33.206752
+8,https://www.iana.org/go/rfc2606,RFC 2606:  Reserved Top Level DNS Names ,1122,8233,34,,2025-04-29T21:51:34.228367
+9,https://www.iana.org/go/rfc6761,RFC 6761: Special-Use Domain Names,4102,29057,83,,2025-04-29T21:51:35.588827
+10,https://www.iana.org/domains/reserved,IANA-managed Reserved Domains,371,2830,66,,2025-04-29T21:51:36.526537
+11,https://www.iana.org/domains/root,Root Zone Management,286,2170,59,,2025-04-29T21:51:37.233269

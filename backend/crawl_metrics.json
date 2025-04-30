@@ -1,0 +1,11 @@
+{
+  "start_time": "2025-04-29T21:51:24.418759",
+  "end_time": "2025-04-29T21:51:38.236203",
+  "total_urls": 11,
+  "successful_fetches": 11,
+  "failed_fetches": 0,
+  "processed_requests": 11,
+  "filtered_requests": 6524,
+  "requests_per_second": 0.8584060741438101,
+  "running_time": 13.817444
+}

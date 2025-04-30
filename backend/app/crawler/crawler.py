@@ -35,6 +35,7 @@ class Crawler:
         }
         # Store detailed info for each URL as required by SRS-31
         self.detailed_results = []
+        self.emitted_urls = set()
 
     def reset_state(self):
         """Reset crawler state and statistics"""
@@ -57,6 +58,7 @@ class Crawler:
         self.detailed_results = []
         self.visited.clear()
         self.results = []
+        self.emitted_urls.clear()
 
     async def start_crawling(self, start_url: str, config: dict, http_handler, websocket=None):
         """
@@ -76,6 +78,19 @@ class Crawler:
             self.export_to_csv()
             self.stats["end_time"] = datetime.now()
             self.log_stats()
+            try:
+                def serialize(obj):
+                    if isinstance(obj, datetime):
+                        return obj.isoformat()
+                    raise TypeError(f"Type {type(obj)} not serializable")
+
+                with open("crawl_metrics.json", "w") as metrics_file:
+                    json.dump(self.stats, metrics_file, indent=2, default=serialize)
+                logging.info("Crawl metrics written to crawl_metrics.json")
+            except Exception as e:
+                logging.error(f"Failed to write crawl metrics: {str(e)}")
+            if websocket:
+                await self._send_update(websocket, "", {}, config, in_progress=False)
             self.state["running"] = False
         except Exception as e:
             logging.error(f"Error during crawling: {str(e)}")
@@ -110,8 +125,10 @@ class Crawler:
         """
         # Check stopping conditions
         if self.state["stopped"] or depth >= config["depth_limit"] or url in self.visited:
-            if url in self.visited:
-                self.stats["filtered_requests"] += 1
+            self.stats["filtered_requests"] += 1
+            logging.info(f"Filtered requests count: {self.stats['filtered_requests']}")
+            if websocket:
+                await self._send_update(websocket, url, {}, config, in_progress=True)
             return
 
         # Check if we've reached the max pages limit
@@ -128,6 +145,8 @@ class Crawler:
         if self.stats["start_time"]:
             current_time = datetime.now()
             self.stats["running_time"] = (current_time - self.stats["start_time"]).total_seconds()
+            self.stats["requests_per_second"] = round(self.stats["processed_requests"] / self.stats["running_time"], 3) if self.stats["running_time"] > 0 else 0
+            logging.info(f"Updated running time: {self.stats['running_time']}s")
 
         self.visited.add(url)
         self.stats["total_urls"] += 1
@@ -141,7 +160,7 @@ class Crawler:
 
         # Prepare a detailed result entry
         result_entry = {
-            "id": self.stats["processed_requests"],
+            "id": len(self.detailed_results) + 1,
             "url": url,
             "title": "",
             "word_count": 0,
@@ -151,15 +170,13 @@ class Crawler:
             "timestamp": datetime.now().isoformat()
         }
 
-        # Send progress update
-        await self._send_update(websocket, url, result_entry, config, in_progress=True)
-
         response = await http_handler.fetch(url, config["timeout"])
         if response is None:
             self.stats["failed_fetches"] += 1
             logging.warning(f"Failed to fetch {url}")
             result_entry["error"] = "Failed to fetch URL"
-            self.detailed_results.append(result_entry)
+            if not any(entry["url"] == url and entry["title"] == result_entry["title"] for entry in self.detailed_results):
+                self.detailed_results.append(result_entry)
             return
 
         self.stats["successful_fetches"] += 1
@@ -179,33 +196,53 @@ class Crawler:
             links = soup.find_all("a", href=True)
             result_entry["links_found"] = len(links)
 
-            self.detailed_results.append(result_entry)
+            if not any(entry["url"] == url and entry["title"] == result_entry["title"] for entry in self.detailed_results):
+                self.detailed_results.append(result_entry)
 
-            # Send completed result update
-            await self._send_update(websocket, url, result_entry, config, in_progress=False)
+            if websocket and url not in self.emitted_urls:
+                self.emitted_urls.add(url)
+                await self._send_update(websocket, url, result_entry, config, in_progress=False)
 
             # Continue crawling
             for link in links:
                 next_url = urljoin(url, link["href"])
                 if valid_url(next_url) and next_url not in self.visited:
                     await self._crawl(next_url, config, depth + 1, http_handler, websocket)
+                else:
+                    self.stats["filtered_requests"] += 1
+                    logging.info(f"Filtered requests count: {self.stats['filtered_requests']}")
         except Exception as e:
             logging.error(f"Error parsing {url}: {str(e)}")
             result_entry["error"] = f"Error parsing content: {str(e)}"
-            self.detailed_results.append(result_entry)
+            if not any(entry["url"] == url and entry["title"] == result_entry["title"] for entry in self.detailed_results):
+                self.detailed_results.append(result_entry)
 
     async def _send_update(self, websocket, url, result_entry, config, in_progress=True):
         """Send update to websocket if available"""
         if websocket:
             try:
+                import copy
+                from datetime import datetime
                 progress = min(100, int(self.stats["processed_requests"] * 100 / config.get("max_pages", 100)))
-                await websocket.send_json({
+                data_to_send = {
                     "url": url,
-                    "stats": self.stats,
-                    "current_result": result_entry,
+                    "stats": {
+                        "running_time": round(self.stats.get("running_time", 0), 2),
+                        "processed_requests": self.stats.get("processed_requests", 0),
+                        "filtered_requests": self.stats.get("filtered_requests", 0),
+                        "requests_per_second": round(self.stats.get("requests_per_second", 0), 2)
+                    },
+                    "current_result": copy.deepcopy(result_entry),
                     "completed": not in_progress,
                     "progress": progress
-                })
+                }
+
+                # Convert datetime to ISO format if present in result
+                if isinstance(data_to_send["current_result"].get("timestamp"), datetime):
+                    data_to_send["current_result"]["timestamp"] = data_to_send["current_result"]["timestamp"].isoformat()
+                logging.info(f"Live Stats: runtime={self.stats.get('running_time')}, filtered={self.stats.get('filtered_requests')}, rps={self.stats.get('requests_per_second')}")
+                logging.info(f"Sending WebSocket update: {json.dumps(data_to_send)}")
+                await websocket.send_json(data_to_send)
             except Exception as e:
                 logging.error(f"Error sending to websocket: {str(e)}")
 
@@ -214,9 +251,18 @@ class Crawler:
         try:
             with open(self.output_file, mode="w", newline="", encoding='utf-8') as file:
                 writer = csv.writer(file)
-                writer.writerow(["ID", "URL"])
+                writer.writerow(["ID", "URL", "Title", "WordCount", "CharCount", "LinksFound", "Error", "Timestamp"])
                 writer.writerows([
-                    [result["id"], result["url"]]
+                    [
+                        result["id"],
+                        result["url"],
+                        result["title"],
+                        result["word_count"],
+                        result["character_count"],
+                        result["links_found"],
+                        result["error"],
+                        result["timestamp"]
+                    ]
                     for result in self.detailed_results
                 ])
             logging.info(f"Results exported to {self.output_file}")
