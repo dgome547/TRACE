@@ -3,10 +3,24 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { resultStore } from '$lib/stores/resultStore';
+  import { configStore } from '$lib/stores/configStore'; // Import the config store
 
-  // Subscribe to result store
+  // Subscribe to stores
   let resultData;
-  $: resultData = $resultStore;
+  let configData;
+  let scanInProgress = false;
+  let scanStarted = false;
+  
+  $: {
+    resultData = $resultStore;
+    configData = $configStore;
+    
+    // Automatically trigger scan when config data changes and scan hasn't started
+    if (configData && !scanStarted && !scanInProgress) {
+      console.log("Config data changed, starting scan");
+      startScan();
+    }
+  }
   
   // Extract data from the correct structure
   $: results = resultData?.results || [];
@@ -85,6 +99,75 @@
     `[RESPONSE] Status: ${result.status_code}, Time: ${result.response_time?.toFixed(3)}s, Length: ${result.content_length}`,
     result.error ? `[ERROR] ${result.error}` : ''
   ]).flat().filter(Boolean);
+
+  // Perform the API call with the config data
+  async function startScan() {
+    console.log("Starting scan with config:", configData);
+    
+    if (!configData) {
+      console.error("No configuration data available");
+      alert("No configuration data available. Please go back to the configuration page.");
+      goto('/bruteForce');
+      return;
+    }
+
+    // Set flags to prevent multiple calls
+    scanInProgress = true;
+    scanStarted = true;
+    
+    console.log("Scan in progress:", scanInProgress);
+
+    const formData = new FormData();
+    formData.append("target_url", configData.target_url);
+
+    if (typeof configData.wordlist_file === 'object') {
+      formData.append("wordlist_file", configData.wordlist_file);
+      console.log("Added wordlist file to request");
+    } else {
+      console.warn("Wordlist file is not an object:", configData.wordlist_file);
+    }
+
+    formData.append("max_concurrent_requests", configData.max_concurrent_requests);
+    formData.append("request_timeout", configData.request_timeout);
+    formData.append("output_format", configData.output_format);
+    formData.append("hide_status", configData.hide_status);
+    formData.append("show_only_status", configData.show_only_status);
+    formData.append("top_level_directory", configData.top_level_directory);
+    formData.append("filter_by_content_length", configData.filter_by_content_length);
+    formData.append("additional_parameters", configData.additional_parameters);
+    
+    console.log("FormData prepared, making API call...");
+    
+    try {
+      // Make sure the DOM has been updated to show scanning status
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      console.log("Sending API request to:", "http://localhost:5000/api/bruteforce/scan");
+      const res = await fetch("http://localhost:5000/api/bruteforce/scan", {
+        method: "POST",
+        body: formData
+      });
+
+      console.log("API response received, status:", res.status);
+
+      if (!res.ok) { 
+        const error = await res.text();
+        throw new Error(`Server Error ${res.status}: ${error}`);
+      }
+
+      const result = await res.json();
+      console.log("Scan Result:", result);
+      
+      // Update the result store with the API response
+      resultStore.set(result);
+    } catch (err) {
+      console.error("Scan error:", err);
+      alert("Error starting scan:\n\n" + err.message);
+    } finally {
+      console.log("Scan completed, setting scanInProgress to false");
+      scanInProgress = false;
+    }
+  }
   
   // SRS 3.2.3.1-27a: Restart functionality
   function handleRestart() {
@@ -129,8 +212,16 @@
     showTerminal = !showTerminal;
   }
 
-  import './results.css';
+  // Start scan when component mounts if there's config data
+  onMount(async () => {
+    console.log("Results page mounted, config data:", configData);
+    if (configData && !scanStarted) {
+      // Start scan immediately when the component mounts
+      await startScan();
+    }
+  });
 
+  import './results.css';
 </script>
 
 
@@ -140,6 +231,8 @@
       Brute Force
       {#if status}
         <span class={`status-indicator status-${status}`}>{status}</span>
+      {:else if scanInProgress}
+        <span class="status-indicator status-running">Running</span>
       {/if}
     </h1>
   </div>
@@ -150,7 +243,13 @@
     <div class="nav-item active">Results</div>
   </div>
 
-  {#if resultData && results.length > 0}
+  {#if scanInProgress}
+    <div class="scan-progress">
+      <p>Scan in progress...</p>
+      <div class="spinner"></div>
+      <p class="scan-details">Running scan for: {configData?.target_url || 'Unknown target'}</p>
+    </div>
+  {:else if resultData && results.length > 0}
     <!-- Summary Metrics -->
     <div class="metrics-container">
       <div class="metric-box">
@@ -212,8 +311,26 @@
         {/each}
       </tbody>
     </table>
+  {:else if !configData}
+    <div class="empty-state">
+      No configuration data available. Please go back to the configuration page.
+      <button class="restart-button" on:click={handleRestart}>
+        Go to Configuration
+      </button>
+    </div>
   {:else}
-    <div class="empty-state">No results data available. Please run a brute force scan first.</div>
+    <div class="empty-state">
+      {#if scanStarted}
+        <p>Scan complete, but no results were returned.</p>
+        <button class="restart-button" on:click={startScan}>
+          Try Again
+        </button>
+      {:else}
+        <p>Ready to start scan with the provided configuration.</p>
+        <button class="start-button" on:click={startScan}>Start Scan Now</button>
+        <p class="scan-note">The scan should start automatically. If it doesn't, click the button above.</p>
+      {/if}
+    </div>
   {/if}
 
   <!-- Action Buttons -->
@@ -249,7 +366,7 @@
 </div>
 
 <style>
-  /* Add these styles to your results.css file or include them here */
+  /* Existing styles from results.css */
   th {
     cursor: pointer;
     user-select: none;
@@ -262,5 +379,101 @@
   
   .sorted-asc, .sorted-desc {
     font-weight: bold;
+  }
+  
+  /* Enhanced styles for scan progress */
+  .scan-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin: 2rem 0;
+  }
+  
+  .scan-details {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .scan-note {
+    margin-top: 1rem;
+    color: #999;
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+  
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #7FBFB6;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-top: 1rem;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .start-button {
+    background-color: #7FBFB6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+  }
+  
+  .start-button:hover {
+    background-color: #6EAFA6;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin: 2rem 0;
+    text-align: center;
+  }
+  
+  .empty-state p {
+    margin-bottom: 1rem;
+  }
+  
+  /* Status indicator styles */
+  .status-indicator {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    color: white;
+  }
+  
+  .status-running {
+    background-color: #4A90E2;
+  }
+  
+  .status-completed {
+    background-color: #7ED321;
+  }
+  
+  .status-error {
+    background-color: #FF3B30;
   }
 </style>
