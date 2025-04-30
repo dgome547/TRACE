@@ -337,7 +337,7 @@
   <div class="actions">
     <div class="left-actions">
       <!-- SRS 3.2.3.1-27a: Restart button -->
-      <button class="restart-button" on:click={handleRestart}>
+      <button class="restart-button" on:click={handleRestart} disabled={!resultData || results.length === 0}>
         Restart
       </button>
       
